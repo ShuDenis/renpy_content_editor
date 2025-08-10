@@ -5,9 +5,15 @@ export function loadFileAsText(accept = "*"): Promise<string | null> {
     input.accept = accept
     input.onchange = () => {
       const file = input.files?.[0]
-      if (!file) return resolve(null)
+      if (!file) {
+        input.remove()
+        return resolve(null)
+      }
       const reader = new FileReader()
-      reader.onload = () => resolve(String(reader.result))
+      reader.onload = () => {
+        resolve(String(reader.result))
+        input.remove()
+      }
       reader.readAsText(file)
     }
     input.click()
@@ -21,6 +27,7 @@ export function saveTextFile(content: string, filename: string) {
   a.href = url
   a.download = filename
   a.click()
+  a.remove()
   URL.revokeObjectURL(url)
 }
 
