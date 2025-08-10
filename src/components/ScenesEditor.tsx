@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
 import { SceneProject, emptyProject, validateSceneProject, Layer } from "@lib/sceneSchema"
 import type { Point, Hotspot } from "@lib/sceneSchema"
-import { loadFileAsText, saveTextFile, round3, convertProjectCoordsMode } from "@lib/utils"
+import { round3, convertProjectCoordsMode } from "@lib/utils"
+import { importSceneProjectFromFile, exportSceneProjectToFile, saveProjectToStorage, loadProjectFromStorage, parseSceneProject } from "@lib/scenePersistence"
 import HotspotPanel from "./HotspotPanel"
 import { drawHotspot, hitTestHotspot, translateHotspot, moveVertexTo, setCircleRadius, insertVertex } from "./HotspotShape"
 import LayerPanel from "./LayerPanel"
@@ -31,14 +32,21 @@ export default function ScenesEditor() {
     { label: "1920x1080", width: 1920, height: 1080 },
   ]
 
-  // load sample on first run
+  // load from localStorage or sample on first run
   useEffect(() => {
+    const stored = loadProjectFromStorage()
+    if (stored) {
+      setProj(stored)
+      setActiveSceneId(stored.scenes[0]?.id)
+      setStatus("Загружен проект из localStorage")
+      return
+    }
     fetch("/samples/scenes.json")
       .then(r => r.ok ? r.text() : Promise.reject("no sample"))
       .then(text => {
         try {
           const json = JSON.parse(text)
-          const parsed = validateSceneProject(json)
+          const parsed = parseSceneProject(json)
           setProj(parsed)
           setActiveSceneId(parsed.scenes[0]?.id)
           setStatus("Загружен samples/scenes.json")
@@ -83,23 +91,39 @@ export default function ScenesEditor() {
   }, [proj, activeSceneId])
 
   function onImportClicked() {
-    loadFileAsText(".json").then(text => {
-      if (!text) return
+    importSceneProjectFromFile().then(parsed => {
+      if (!parsed) return
       try {
-        const parsed = validateSceneProject(JSON.parse(text))
         setProj(parsed)
         setActiveSceneId(parsed.scenes[0]?.id)
         setStatus("Импорт JSON выполнен")
       } catch (e:any) {
         setStatus("Ошибка валидации: " + e.message)
       }
+    }).catch((e:any) => {
+      setStatus("Ошибка валидации: " + e.message)
     })
   }
 
   function onExportClicked() {
-    const out = JSON.stringify(proj, null, 2)
-    saveTextFile(out, "scenes.json")
+    exportSceneProjectToFile(proj)
     setStatus("Экспортировано scenes.json")
+  }
+
+  function onSaveClicked() {
+    saveProjectToStorage(proj)
+    setStatus("Сохранено в localStorage")
+  }
+
+  function onLoadClicked() {
+    const loaded = loadProjectFromStorage()
+    if (loaded) {
+      setProj(loaded)
+      setActiveSceneId(loaded.scenes[0]?.id)
+      setStatus("Загружено из localStorage")
+    } else {
+      setStatus("Нет сохранённого проекта")
+    }
   }
 
   function addImageLayer() {
@@ -323,6 +347,8 @@ export default function ScenesEditor() {
         <div style={{ display:"flex", gap:8, marginBottom: 8, alignItems:"center" }}>
           <button onClick={onImportClicked}>Импорт JSON</button>
           <button onClick={onExportClicked}>Экспорт JSON</button>
+          <button onClick={onSaveClicked}>Сохранить</button>
+          <button onClick={onLoadClicked}>Загрузить</button>
           <button onClick={openPreview}>Превью</button>
           <label style={{ display:"flex", alignItems:"center", gap:4 }}>
             <input type="checkbox" checked={useWebGL} onChange={e=>setUseWebGL(e.target.checked)} />WebGL
