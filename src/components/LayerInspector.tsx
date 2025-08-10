@@ -6,7 +6,7 @@ type Props = {
   onChange(layer: Layer): void
 }
 
-function TransitionEditor({ label, value, onChange }: { label: string; value?: { type: string; duration?: number }; onChange(v?: { type: string; duration?: number }): void }) {
+function TransitionEditor({ label, value, onChange }: { label: string; value?: { type: string; duration?: number; easing?: string }; onChange(v?: { type: string; duration?: number; easing?: string }): void }) {
   return (
     <div style={{ marginTop: 4 }}>
       <label>{label} type
@@ -14,7 +14,7 @@ function TransitionEditor({ label, value, onChange }: { label: string; value?: {
           value={value?.type || ""}
           onChange={e => {
             const type = e.target.value
-            onChange(type ? { type, duration: value?.duration } : undefined)
+            onChange(type ? { type, duration: value?.duration, easing: value?.easing } : undefined)
           }}
         />
       </label>
@@ -26,6 +26,16 @@ function TransitionEditor({ label, value, onChange }: { label: string; value?: {
           onChange={e => {
             const d = e.target.value
             onChange(value ? { ...value, duration: d === "" ? undefined : parseFloat(d) } : { type: "", duration: parseFloat(d) })
+          }}
+        />
+      </label>
+      <label>
+        easing
+        <input
+          value={value?.easing || ""}
+          onChange={e => {
+            const easing = e.target.value
+            onChange(value ? { ...value, easing } : { type: "", easing })
           }}
         />
       </label>

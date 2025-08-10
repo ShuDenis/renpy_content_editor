@@ -147,8 +147,7 @@ export default function CanvasView(props: CanvasViewProps) {
         // Хотспоты
         if (project && scene) {
           for (const hs of hotspots) {
-            // @ts-expect-error optional domain-specific flag
-            if (!(hs as any).hidden) drawHotspotPreview(ctx2d, project, hs, W, H);
+            if (!hs.hidden) drawHotspotPreview(ctx2d, project, hs, W, H);
           }
         }
       } else {
@@ -178,8 +177,7 @@ export default function CanvasView(props: CanvasViewProps) {
         // Хотспоты
         if (project && scene) {
           for (const hs of hotspots) {
-            // @ts-expect-error optional domain-specific flag
-            if (!(hs as any).hidden) drawHotspotPreview(ctx, project, hs, W, H);
+            if (!hs.hidden) drawHotspotPreview(ctx, project, hs, W, H);
           }
         }
       }
