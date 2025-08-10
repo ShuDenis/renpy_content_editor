@@ -351,14 +351,21 @@ export default function ScenesEditor() {
     setPreview(false)
   }
 
+  function openImagesFolder() {
+    window.open("/images/", "_blank")
+  }
+
   return (
-    <div style={{ display:"grid", gridTemplateColumns: "280px 1fr 300px", width:"100%" }}>
+    <div style={{ display:"grid", gridTemplateColumns: "280px 1fr 300px", width:"100%", position:"relative" }}>
+      <div style={{ position:"absolute", top:8, right:8, display:"flex", gap:8 }}>
+        <button onClick={onImportClicked}>Импорт JSON</button>
+        <button onClick={onExportClicked}>Экспорт JSON</button>
+        <button onClick={onSaveClicked}>Сохранить</button>
+        <button onClick={onLoadClicked}>Загрузить</button>
+        <button onClick={openImagesFolder}>Папка изображений</button>
+      </div>
       <aside style={{ borderRight: "1px solid #eee", padding: 12 }}>
-        <div style={{ display:"flex", gap:8, marginBottom: 8, alignItems:"center" }}>
-          <button onClick={onImportClicked}>Импорт JSON</button>
-          <button onClick={onExportClicked}>Экспорт JSON</button>
-          <button onClick={onSaveClicked}>Сохранить</button>
-          <button onClick={onLoadClicked}>Загрузить</button>
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom: 8, alignItems:"center" }}>
           <button onClick={openPreview}>Превью</button>
           <label style={{ display:"flex", alignItems:"center", gap:4 }}>
             <input type="checkbox" checked={useWebGL} onChange={e=>setUseWebGL(e.target.checked)} />WebGL

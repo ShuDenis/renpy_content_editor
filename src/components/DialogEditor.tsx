@@ -87,13 +87,13 @@ function Graph() {
   }
 
   return (
-    <div style={{ display:"grid", gridTemplateColumns: "240px 1fr", width:"100%" }}>
+    <div style={{ display:"grid", gridTemplateColumns: "240px 1fr", width:"100%", position:"relative" }}>
+      <div style={{ position:"absolute", top:8, right:8, display:"flex", gap:8 }}>
+        <button onClick={importJson}>Импорт JSON</button>
+        <button onClick={exportJson}>Экспорт JSON</button>
+      </div>
       <aside style={{ borderRight: "1px solid #eee", padding: 12 }}>
-        <div style={{ display:"flex", gap:8, marginBottom: 8 }}>
-          <button onClick={importJson}>Импорт JSON</button>
-          <button onClick={exportJson}>Экспорт JSON</button>
-        </div>
-        <button onClick={addNode}>+ Узел</button>
+        <button onClick={addNode} style={{ marginBottom:8 }}>+ Узел</button>
         <div style={{ marginTop: 12, fontSize:12, opacity:0.8 }}>{status}</div>
         <p style={{ fontSize:12, opacity:0.8 }}>Подсказка: соединяйте узлы линиями для создания переходов.</p>
       </aside>
