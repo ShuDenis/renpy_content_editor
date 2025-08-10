@@ -11,4 +11,9 @@ export default defineConfig({
       '@lib': fileURLToPath(new URL('./src/lib', import.meta.url)),
     },
   },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.ts'
+  }
 })
