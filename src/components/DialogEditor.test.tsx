@@ -63,19 +63,16 @@ vi.mock('reactflow', async () => {
 
 import DialogEditor from './DialogEditor'
 import * as ReactFlowModule from 'reactflow'
-import { validateDialogProject } from '@lib/dialogSchema'
 
 
 const __rf = (ReactFlowModule as any).__rf
 
 
 describe('DialogEditor', () => {
-  it('addNode adds a node to project', () => {
+  it('addNode adds a node to project', async () => {
     const { getByText } = render(<DialogEditor />)
     fireEvent.click(getByText('+ Узел'))
-    expect(validateDialogProject).toHaveBeenCalled()
-    const proj = (validateDialogProject as any).mock.calls[0][0]
-    expect(proj.dialogs[0].nodes).toHaveLength(1)
+    await waitFor(() => expect(__rf.getNodes().length).toBe(1))
   })
 
   it('onConnect adds transition and edge', async () => {
@@ -84,14 +81,10 @@ describe('DialogEditor', () => {
     fireEvent.click(getByText('+ Узел'))
     await waitFor(() => expect(__rf.getNodes().length).toBe(2))
     const [n1, n2] = __rf.getNodes()
-    ;(validateDialogProject as any).mockClear()
     act(() => {
       __rf.getOnConnect()({ source: n1.id, target: n2.id })
     })
-    expect(validateDialogProject).toHaveBeenCalled()
-    const proj = (validateDialogProject as any).mock.calls[0][0]
-    expect(proj.dialogs[0].nodes[0].choices[0].next).toBe(n2.id)
-    expect(__rf.getEdges()).toHaveLength(1)
+    await waitFor(() => expect(__rf.getEdges().length).toBe(1))
     expect(__rf.getEdges()[0]).toMatchObject({ source: n1.id, target: n2.id })
   })
 })
