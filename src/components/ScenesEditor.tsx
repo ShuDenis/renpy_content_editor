@@ -81,6 +81,31 @@ export default function ScenesEditor() {
     setStatus("Экспортировано scenes.json")
   }
 
+  function saveProject() {
+    try {
+      localStorage.setItem("scenesProject", JSON.stringify(proj))
+      setStatus("Проект сохранён")
+    } catch (e:any) {
+      setStatus("Не удалось сохранить проект: " + e.message)
+    }
+  }
+
+  function loadProject() {
+    const text = localStorage.getItem("scenesProject")
+    if (!text) {
+      setStatus("Нет сохранённого проекта")
+      return
+    }
+    try {
+      const parsed = validateSceneProject(JSON.parse(text))
+      setProj(parsed)
+      setActiveSceneId(parsed.scenes[0]?.id)
+      setStatus("Проект загружен")
+    } catch (e:any) {
+      setStatus("Ошибка загрузки: " + e.message)
+    }
+  }
+
   function addRectHotspot() {
     const scene = proj.scenes.find(s => s.id === activeSceneId)
     if (!scene) return
@@ -102,22 +127,26 @@ export default function ScenesEditor() {
   )), [proj, activeSceneId])
 
   return (
-    <div style={{ display:"grid", gridTemplateColumns: "280px 1fr", width:"100%" }}>
-      <aside style={{ borderRight: "1px solid #eee", padding: 12 }}>
-        <div style={{ display:"flex", gap:8, marginBottom: 8 }}>
-          <button onClick={onImportClicked}>Импорт JSON</button>
-          <button onClick={onExportClicked}>Экспорт JSON</button>
-        </div>
-        <div style={{ display:"flex", gap:8, marginBottom: 8 }}>
-          <button onClick={addRectHotspot}>+ Rect Hotspot</button>
-        </div>
-        <strong>Сцены</strong>
-        <ul style={{ listStyle:"none", padding:0 }}>{sceneList}</ul>
-        <div style={{ marginTop: 12, fontSize:12, opacity:0.8 }}>{status}</div>
-      </aside>
-      <section style={{ display:"flex", alignItems:"center", justifyContent:"center" }}>
-        <canvas ref={canvasRef} width={960} height={540} style={{ width:"100%", height:"100%", maxWidth: "calc(100vw - 280px)", aspectRatio: "16/9", border:"1px solid #ddd", background:"#fff" }} />
-      </section>
-    </div>
+    <>
+      <div style={{ display:"grid", gridTemplateColumns: "280px 1fr", width:"100%" }}>
+        <aside style={{ borderRight: "1px solid #eee", padding: 12 }}>
+          <div style={{ display:"flex", gap:8, marginBottom: 8 }}>
+            <button onClick={addRectHotspot}>+ Rect Hotspot</button>
+          </div>
+          <strong>Сцены</strong>
+          <ul style={{ listStyle:"none", padding:0 }}>{sceneList}</ul>
+          <div style={{ marginTop: 12, fontSize:12, opacity:0.8 }}>{status}</div>
+        </aside>
+        <section style={{ display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <canvas ref={canvasRef} width={960} height={540} style={{ width:"100%", height:"100%", maxWidth: "calc(100vw - 280px)", aspectRatio: "16/9", border:"1px solid #ddd", background:"#fff" }} />
+        </section>
+      </div>
+      <div style={{ position: "fixed", left: 12, bottom: 12, display: "flex", flexDirection: "column", gap: 4 }}>
+        <button onClick={saveProject}>Сохранить</button>
+        <button onClick={loadProject}>Загрузить</button>
+        <button onClick={onImportClicked}>Импорт JSON</button>
+        <button onClick={onExportClicked}>Экспорт JSON</button>
+      </div>
+    </>
   )
 }
