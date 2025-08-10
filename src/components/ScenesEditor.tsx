@@ -4,6 +4,7 @@ import type { Point, Hotspot } from "@lib/sceneSchema"
 import { loadFileAsText, saveTextFile, round3, convertProjectCoordsMode } from "@lib/utils"
 import HotspotPanel from "./HotspotPanel"
 import { drawHotspot, hitTestHotspot, translateHotspot, moveVertexTo, setCircleRadius, insertVertex } from "./HotspotShape"
+import CanvasView from "./CanvasView"
 
 type Action = NonNullable<Hotspot['action']>
 type ActionType = Action['type']
@@ -16,6 +17,8 @@ export default function ScenesEditor() {
   const [drag, setDrag] = useState<{ hsIndex: number; mode: "move"|"vertex"|"radius"; vertexIndex?: number; prevX: number; prevY: number } | null>(null)
   const [selectedHs, setSelectedHs] = useState<number | null>(null)
   const [manualRes, setManualRes] = useState(false)
+  const [preview, setPreview] = useState(false)
+  const [useWebGL, setUseWebGL] = useState(false)
   const resolutions = [
     { label: "640x480", width: 640, height: 480 },
     { label: "800x600", width: 800, height: 600 },
@@ -232,12 +235,26 @@ export default function ScenesEditor() {
     setProj(validateSceneProject(next))
   }
 
+  function openPreview() {
+    document.documentElement.requestFullscreen?.()
+    setPreview(true)
+  }
+
+  function closePreview() {
+    if (document.fullscreenElement) document.exitFullscreen()
+    setPreview(false)
+  }
+
   return (
     <div style={{ display:"grid", gridTemplateColumns: "280px 1fr 300px", width:"100%" }}>
       <aside style={{ borderRight: "1px solid #eee", padding: 12 }}>
-        <div style={{ display:"flex", gap:8, marginBottom: 8 }}>
+        <div style={{ display:"flex", gap:8, marginBottom: 8, alignItems:"center" }}>
           <button onClick={onImportClicked}>Импорт JSON</button>
           <button onClick={onExportClicked}>Экспорт JSON</button>
+          <button onClick={openPreview}>Превью</button>
+          <label style={{ display:"flex", alignItems:"center", gap:4 }}>
+            <input type="checkbox" checked={useWebGL} onChange={e=>setUseWebGL(e.target.checked)} />WebGL
+          </label>
         </div>
         <div style={{ marginBottom:8 }}>
           <strong>Экран</strong>
@@ -443,6 +460,9 @@ export default function ScenesEditor() {
           </>
         )}
       </aside>
+      {preview && activeSceneId && (
+        <CanvasView project={proj} sceneId={activeSceneId} useWebGL={useWebGL} onExit={closePreview} />
+      )}
     </div>
   )
 }
