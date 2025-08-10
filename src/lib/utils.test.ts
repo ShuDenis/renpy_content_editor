@@ -44,7 +44,16 @@ describe('coordinate helpers', () => {
     const src: SceneProject = {
       version: '1.0',
       project: { reference_resolution: { width: 100, height: 100 }, coords_mode: 'relative' },
-      scenes: [{ id: 's', layers: [], hotspots: [{ id: 'h', shape: 'rect', rect: { x: 0.1, y: 0.2, w: 0.3, h: 0.4 } }] }]
+      scenes: [{
+        id: 's',
+        layers: [],
+        hotspots: [{
+          id: 'h',
+          hidden: false,
+          shape: 'rect',
+          rect: { x: 0.1, y: 0.2, w: 0.3, h: 0.4 }
+        }]
+      }]
     }
     const abs = convertProjectCoordsMode(src, 'absolute')
     expect(abs.project.coords_mode).toBe('absolute')
