@@ -32,7 +32,7 @@ function Graph() {
       ...proj,
       dialogs: [
         { ...d0, nodes: [...d0.nodes, { id, text: "Новая реплика", choices: [] }] },
-        *proj.dialogs.slice(1)
+        ...proj.dialogs.slice(1)
       ]
     } as any
     setProj(validateDialogProject(next))
