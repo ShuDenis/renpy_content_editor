@@ -6,6 +6,7 @@ describe('hotspot cloning', () => {
     const original: Hotspot & { created: Date } = {
       id: 'hs1',
       shape: 'rect',
+      hidden: false,
       rect: { x: 0.1, y: 0.2, w: 0.3, h: 0.4 },
       tooltip: undefined,
       created: new Date('2024-06-01T00:00:00Z'),
