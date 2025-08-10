@@ -155,6 +155,16 @@ export default function ScenesEditor() {
     setSelectedLayerId(newId)
   }
 
+  function addDroppedImage(src: string) {
+    const scene = proj.scenes.find(s => s.id === activeSceneId)
+    if (!scene) return
+    const id = "layer_" + Math.random().toString(36).slice(2,8)
+    const layers = [...scene.layers, { id, type: "image" as const, image: src, alpha: 1, zorder: scene.layers.length }]
+    const next = { ...proj, scenes: proj.scenes.map(s => s.id === scene.id ? { ...s, layers } : s) }
+    setProj(validateSceneProject(next))
+    setSelectedLayerId(id)
+  }
+
   function reorderLayers(from: number, to: number) {
     const sceneIndex = proj.scenes.findIndex(s => s.id === activeSceneId)
     if (sceneIndex < 0) return
@@ -376,8 +386,28 @@ export default function ScenesEditor() {
         <div style={{ marginTop: 12, fontSize:12, opacity:0.8 }}>{status}</div>
       </aside>
       <section style={{ display:"flex", alignItems:"center", justifyContent:"center" }}>
-        <div style={{ width:"100%", height:"100%", maxWidth: "calc(100vw - 580px)", aspectRatio: "16/9", position:"relative", border:"1px solid #ddd", background:"#fff" }}>
-          <CanvasView layers={activeScene?.layers || []} width={canvasSize.width} height={canvasSize.height} />
+        <div
+          style={{ width:"100%", height:"100%", maxWidth: "calc(100vw - 580px)", aspectRatio: "16/9", position:"relative", border:"1px solid #ddd", background:"#fff" }}
+          onDragOver={e => e.preventDefault()}
+          onDrop={e => {
+            e.preventDefault()
+            const files = e.dataTransfer.files
+            for (const file of Array.from(files)) {
+              if (["image/png","image/jpeg","image/webp"].includes(file.type)) {
+                const url = URL.createObjectURL(file)
+                addDroppedImage(url)
+              }
+            }
+            const uri = e.dataTransfer.getData("text/uri-list") || e.dataTransfer.getData("text/plain")
+            if (uri && uri.match(/\.(png|jpe?g|webp)$/i)) addDroppedImage(uri.trim())
+          }}
+        >
+          <CanvasView
+            layers={activeScene?.layers || []}
+            width={canvasSize.width}
+            height={canvasSize.height}
+            onDropImage={addDroppedImage}
+          />
           <canvas
             ref={canvasRef}
             width={960}

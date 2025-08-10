@@ -38,9 +38,27 @@ export default function LayerInspector({ layer, onChange }: Props) {
   return (
     <div style={{ marginTop: 8 }}>
       {layer.type === "image" && (
-        <label>Image
-          <input value={layer.image} onChange={e => onChange({ ...layer, image: e.target.value })} />
-        </label>
+        <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+          <span style={{ fontSize:12, wordBreak:"break-all" }}>{layer.image}</span>
+          <button
+            onClick={() => {
+              const input = document.createElement("input")
+              input.type = "file"
+              input.accept = "image/png,image/jpeg,image/webp"
+              input.onchange = () => {
+                const file = input.files?.[0]
+                if (file) {
+                  const url = URL.createObjectURL(file)
+                  onChange({ ...layer, image: url })
+                }
+                input.remove()
+              }
+              input.click()
+            }}
+          >
+            Replace image
+          </button>
+        </div>
       )}
       {layer.type === "color" && (
         <label>Color

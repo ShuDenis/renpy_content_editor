@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from "react";
-import type { SceneProject, Hotspot, Layer } from "@lib/sceneSchema";
-import { globalImageCache } from "@lib/imageCache";
-import { projectToCanvasScalar, projectToCanvasPoint } from "@lib/utils";
+import React, { useEffect, useRef } from "react"
+import type { SceneProject, Hotspot, Layer } from "@lib/sceneSchema"
+import { globalImageCache } from "@lib/imageCache"
+import { projectToCanvasScalar, projectToCanvasPoint } from "@lib/utils"
 
 type CanvasViewProps =
   | {
@@ -13,6 +13,7 @@ type CanvasViewProps =
       width?: number;
       height?: number;
       layers?: never;
+      onDropImage?: (src: string) => void
     }
   | {
       // Простой режим: рисуем список слоёв как есть (без хотспотов)
@@ -23,6 +24,7 @@ type CanvasViewProps =
       sceneId?: never;
       useWebGL?: boolean;
       onExit?: () => void;
+      onDropImage?: (src: string) => void
     };
 
 function drawHotspotPreview(
@@ -80,6 +82,7 @@ export default function CanvasView(props: CanvasViewProps) {
   const sceneId = "sceneId" in props ? props.sceneId : undefined;
   const useWebGL = props.useWebGL;
   const onExit = props.onExit;
+  const onDropImage = props.onDropImage
 
   const scene = project ? project.scenes.find((s) => s.id === sceneId) : undefined;
   const layersToDraw: Layer[] = scene ? scene.layers : (("layers" in props && props.layers) || []);
@@ -137,8 +140,14 @@ export default function CanvasView(props: CanvasViewProps) {
           } else if (layer.type === "image") {
             const rec = imageMap.get(layer.image);
             if (rec?.img) {
-              ctx2d.globalAlpha = rec.alpha;
-              ctx2d.drawImage(rec.img, 0, 0, W, H);
+              const img = rec.img
+              const scale = Math.min(W / img.naturalWidth, H / img.naturalHeight)
+              const w = img.naturalWidth * scale
+              const h = img.naturalHeight * scale
+              const x = (W - w) / 2
+              const y = (H - h) / 2
+              ctx2d.globalAlpha = rec.alpha
+              ctx2d.drawImage(img, x, y, w, h)
             }
           }
         }
@@ -167,8 +176,14 @@ export default function CanvasView(props: CanvasViewProps) {
           } else if (layer.type === "image") {
             const rec = imageMap.get(layer.image);
             if (rec?.img) {
-              ctx.globalAlpha = rec.alpha;
-              ctx.drawImage(rec.img, 0, 0, W, H);
+              const img = rec.img
+              const scale = Math.min(W / img.naturalWidth, H / img.naturalHeight)
+              const w = img.naturalWidth * scale
+              const h = img.naturalHeight * scale
+              const x = (W - w) / 2
+              const y = (H - h) / 2
+              ctx.globalAlpha = rec.alpha
+              ctx.drawImage(img, x, y, w, h)
             }
           }
         }
@@ -190,11 +205,47 @@ export default function CanvasView(props: CanvasViewProps) {
   if (onExit) {
     return (
       <div style={{ position: "fixed", inset: 0, background: "#000", zIndex: 1000 }} onClick={onExit}>
-        <canvas ref={canvasRef} style={{ width: "100%", height: "100%" }} />
+        <canvas
+          ref={canvasRef}
+          style={{ width: "100%", height: "100%" }}
+          onDragOver={e => e.preventDefault()}
+          onDrop={e => {
+            e.preventDefault()
+            if (!onDropImage) return
+            const files = e.dataTransfer.files
+            for (const file of Array.from(files)) {
+              if (["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+                const url = URL.createObjectURL(file)
+                onDropImage(url)
+              }
+            }
+            const uri = e.dataTransfer.getData("text/uri-list") || e.dataTransfer.getData("text/plain")
+            if (uri && uri.match(/\.(png|jpe?g|webp)$/i)) onDropImage(uri.trim())
+          }}
+        />
       </div>
     );
   }
 
   // Иначе — «встраиваемый» канвас (как в простом варианте)
-  return <canvas ref={canvasRef} style={{ width: "100%", height: "100%" }} />;
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{ width: "100%", height: "100%" }}
+      onDragOver={e => e.preventDefault()}
+      onDrop={e => {
+        e.preventDefault()
+        if (!onDropImage) return
+        const files = e.dataTransfer.files
+        for (const file of Array.from(files)) {
+          if (["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+            const url = URL.createObjectURL(file)
+            onDropImage(url)
+          }
+        }
+        const uri = e.dataTransfer.getData("text/uri-list") || e.dataTransfer.getData("text/plain")
+        if (uri && uri.match(/\.(png|jpe?g|webp)$/i)) onDropImage(uri.trim())
+      }}
+    />
+  )
 }

@@ -112,7 +112,7 @@ describe('ScenesEditor', () => {
   it('adds rect hotspot via panel (matches current UI)', async () => {
     const { getByText } = render(<ScenesEditor />);
     await waitFor(() => getByText('Загружен samples/scenes.json'));
-    fireEvent.click(getByText('+ Rect Hotspot'));
+    fireEvent.click(getByText('+ Rect'));
     await waitFor(() => getByText('Добавлен прямоугольный хотспот'));
   });
 
