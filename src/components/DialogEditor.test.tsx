@@ -62,8 +62,10 @@ vi.mock('reactflow', async () => {
 })
 
 import DialogEditor from './DialogEditor'
-import { __rf } from 'reactflow'
+import * as ReactFlowModule from 'reactflow'
 import { validateDialogProject } from '@lib/dialogSchema'
+
+const { __rf } = ReactFlowModule as any
 
 describe('DialogEditor', () => {
   it('addNode adds a node to project', () => {
