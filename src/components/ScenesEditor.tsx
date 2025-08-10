@@ -1,12 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
 import { SceneProject, emptyProject, validateSceneProject } from "@lib/sceneSchema"
+import type { Point, Hotspot } from "@lib/sceneSchema"
 import { loadFileAsText, saveTextFile } from "@lib/utils"
+import HotspotPanel from "./HotspotPanel"
+import { drawHotspot, hitTestHotspot, translateHotspot, moveVertexTo, setCircleRadius, insertVertex } from "./HotspotShape"
 
 export default function ScenesEditor() {
   const [proj, setProj] = useState<SceneProject>(emptyProject())
   const [status, setStatus] = useState<string>("")
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [activeSceneId, setActiveSceneId] = useState<string | undefined>(undefined)
+  const [drag, setDrag] = useState<{ hsIndex: number; mode: "move"|"vertex"|"radius"; vertexIndex?: number; prevX: number; prevY: number } | null>(null)
 
   // load sample on first run
   useEffect(() => {
@@ -42,23 +46,10 @@ export default function ScenesEditor() {
     ctx.fillStyle = "#fafafa"
     ctx.fillRect(0,0,W,H)
 
-    // draw hotspots (rect only for MVP)
-    ctx.save()
-    ctx.strokeStyle = "#333"
-    ctx.fillStyle = "rgba(0,0,0,0.06)"
-    const refW = proj.project.reference_resolution.width
-    const refH = proj.project.reference_resolution.height
-    const rel = proj.project.coords_mode === "relative"
+    // draw hotspots
     for (const hs of scene.hotspots ?? []) {
-      if (hs.shape !== "rect" || !hs.rect) continue
-      const x = rel ? hs.rect.x * W : hs.rect.x * (W/refW)
-      const y = rel ? hs.rect.y * H : hs.rect.y * (H/refH)
-      const w = rel ? hs.rect.w * W : hs.rect.w * (W/refW)
-      const h = rel ? hs.rect.h * H : hs.rect.h * (H/refH)
-      ctx.fillRect(x,y,w,h)
-      ctx.strokeRect(x,y,w,h)
+      drawHotspot(ctx, proj, hs, W, H)
     }
-    ctx.restore()
   }, [proj, activeSceneId])
 
   function onImportClicked() {
@@ -93,6 +84,32 @@ export default function ScenesEditor() {
     setStatus("Добавлен прямоугольный хотспот")
   }
 
+  function addPolygonHotspot() {
+    const scene = proj.scenes.find(s => s.id === activeSceneId)
+    if (!scene) return
+    const id = "hs_" + Math.random().toString(36).slice(2,8)
+    const points: Point[] = [[0.1,0.1],[0.2,0.1],[0.15,0.2]]
+    const next = { ...proj, scenes: proj.scenes.map(s => s.id === scene.id
+      ? { ...s, hotspots: [...(s.hotspots ?? []), { id, shape: "polygon", points, tooltip: "Новый полигон", action: { type: "go_scene", scene_id: scene.id } }] }
+      : s
+    )}
+    setProj(validateSceneProject(next))
+    setStatus("Добавлен полигональный хотспот")
+  }
+
+  function addCircleHotspot() {
+    const scene = proj.scenes.find(s => s.id === activeSceneId)
+    if (!scene) return
+    const id = "hs_" + Math.random().toString(36).slice(2,8)
+    const circle = { cx:0.3, cy:0.3, r:0.1 }
+    const next = { ...proj, scenes: proj.scenes.map(s => s.id === scene.id
+      ? { ...s, hotspots: [...(s.hotspots ?? []), { id, shape: "circle", circle, tooltip: "Новый круг", action: { type: "go_scene", scene_id: scene.id } }] }
+      : s
+    )}
+    setProj(validateSceneProject(next))
+    setStatus("Добавлен круглый хотспот")
+  }
+
   const sceneList = useMemo(() => proj.scenes.map(s => (
     <li key={s.id}>
       <button onClick={() => setActiveSceneId(s.id)} style={{ fontWeight: activeSceneId===s.id?600:400 }}>
@@ -101,6 +118,66 @@ export default function ScenesEditor() {
     </li>
   )), [proj, activeSceneId])
 
+  function handleMouseDown(e: React.MouseEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current
+    const scene = proj.scenes.find(s => s.id === activeSceneId)
+    if (!canvas || !scene) return
+    const rect = canvas.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const W = canvas.width, H = canvas.height
+    for (let i=(scene.hotspots?.length||0)-1; i>=0; i--) {
+      const hs = scene.hotspots![i]
+      const hit = hitTestHotspot(proj, hs, W, H, x, y)
+      if (hit) {
+        if (hit.kind === "add") {
+          const hsCopy: Hotspot = JSON.parse(JSON.stringify(hs))
+          insertVertex(hsCopy, proj, hit.index, x, y, W, H)
+          const hotspots = scene.hotspots!.map((h,j)=> j===i?hsCopy:h)
+          const next = { ...proj, scenes: proj.scenes.map(s => s.id===scene.id? {...s, hotspots}: s) }
+          setProj(validateSceneProject(next))
+          setDrag({ hsIndex:i, mode:"vertex", vertexIndex: hit.index+1, prevX:x, prevY:y })
+        } else if (hit.kind === "vertex") {
+          setDrag({ hsIndex:i, mode:"vertex", vertexIndex: hit.index, prevX:x, prevY:y })
+        } else if (hit.kind === "radius") {
+          setDrag({ hsIndex:i, mode:"radius", prevX:x, prevY:y })
+        } else if (hit.kind === "move") {
+          setDrag({ hsIndex:i, mode:"move", prevX:x, prevY:y })
+        }
+        break
+      }
+    }
+  }
+
+  function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
+    if (!drag) return
+    const canvas = canvasRef.current
+    const sceneIndex = proj.scenes.findIndex(s => s.id === activeSceneId)
+    if (!canvas || sceneIndex < 0) return
+    const rect = canvas.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const W = canvas.width, H = canvas.height
+    const scene = proj.scenes[sceneIndex]
+    const hs = scene.hotspots![drag.hsIndex]
+    const hsCopy: Hotspot = JSON.parse(JSON.stringify(hs))
+    if (drag.mode === "move") {
+      translateHotspot(hsCopy, proj, x - drag.prevX, y - drag.prevY, W, H)
+    } else if (drag.mode === "vertex" && drag.vertexIndex !== undefined) {
+      moveVertexTo(hsCopy, proj, drag.vertexIndex, x, y, W, H)
+    } else if (drag.mode === "radius") {
+      setCircleRadius(hsCopy, proj, x, y, W, H)
+    }
+    const hotspots = scene.hotspots!.map((h,j)=> j===drag.hsIndex?hsCopy:h)
+    const next = { ...proj, scenes: proj.scenes.map((s,si)=> si===sceneIndex? {...s, hotspots}: s) }
+    setProj(validateSceneProject(next))
+    setDrag({ ...drag, prevX:x, prevY:y })
+  }
+
+  function handleMouseUp() {
+    setDrag(null)
+  }
+
   return (
     <div style={{ display:"grid", gridTemplateColumns: "280px 1fr", width:"100%" }}>
       <aside style={{ borderRight: "1px solid #eee", padding: 12 }}>
@@ -108,15 +185,21 @@ export default function ScenesEditor() {
           <button onClick={onImportClicked}>Импорт JSON</button>
           <button onClick={onExportClicked}>Экспорт JSON</button>
         </div>
-        <div style={{ display:"flex", gap:8, marginBottom: 8 }}>
-          <button onClick={addRectHotspot}>+ Rect Hotspot</button>
-        </div>
+        <HotspotPanel onAddRect={addRectHotspot} onAddPolygon={addPolygonHotspot} onAddCircle={addCircleHotspot} />
         <strong>Сцены</strong>
         <ul style={{ listStyle:"none", padding:0 }}>{sceneList}</ul>
         <div style={{ marginTop: 12, fontSize:12, opacity:0.8 }}>{status}</div>
       </aside>
       <section style={{ display:"flex", alignItems:"center", justifyContent:"center" }}>
-        <canvas ref={canvasRef} width={960} height={540} style={{ width:"100%", height:"100%", maxWidth: "calc(100vw - 280px)", aspectRatio: "16/9", border:"1px solid #ddd", background:"#fff" }} />
+        <canvas
+          ref={canvasRef}
+          width={960}
+          height={540}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          style={{ width:"100%", height:"100%", maxWidth: "calc(100vw - 280px)", aspectRatio: "16/9", border:"1px solid #ddd", background:"#fff" }}
+        />
       </section>
     </div>
   )

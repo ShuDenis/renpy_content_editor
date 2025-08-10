@@ -2,7 +2,8 @@ import { z } from "zod"
 
 export const Rect = z.object({ x: z.number(), y: z.number(), w: z.number(), h: z.number() })
 export const Circle = z.object({ cx: z.number(), cy: z.number(), r: z.number() })
-export const Point = z.tuple([z.number(), z.number()])
+export const PointSchema = z.tuple([z.number(), z.number()])
+export type Point = z.infer<typeof PointSchema>
 
 const Transition = z.object({ type: z.string(), duration: z.number().optional() })
 
@@ -14,11 +15,11 @@ const Action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("function"), name: z.string(), params: z.record(z.any()).optional() }),
 ])
 
-const Hotspot = z.object({
+export const HotspotSchema = z.object({
   id: z.string(),
   shape: z.enum(["rect","polygon","circle"]),
   rect: Rect.optional(),
-  points: z.array(Point).optional(),
+  points: z.array(PointSchema).optional(),
   circle: Circle.optional(),
   tooltip: z.string().optional(),
   hover_effect: z.record(z.any()).optional(),
@@ -34,7 +35,7 @@ const Scene = z.object({
   name: z.string().optional(),
   enter_transition: Transition.optional(),
   layers: z.array(Layer).default([]),
-  hotspots: z.array(Hotspot).default([])
+  hotspots: z.array(HotspotSchema).default([])
 })
 
 const Project = z.object({
@@ -49,6 +50,7 @@ export const SceneProjectSchema = z.object({
 })
 
 export type SceneProject = z.infer<typeof SceneProjectSchema>
+export type Hotspot = z.infer<typeof HotspotSchema>
 
 export function validateSceneProject(data: unknown): SceneProject {
   const parsed = SceneProjectSchema.parse(data)
