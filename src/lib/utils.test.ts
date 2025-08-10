@@ -49,10 +49,10 @@ describe('file helpers', () => {
 
     class FR {
       result: string | ArrayBuffer | null = null
-      onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null
+      onload: ((ev: ProgressEvent<FileReader>) => any) | null = null
       readAsText(f: File) {
         this.result = content
-        this.onload && this.onload(new ProgressEvent('load'))
+        this.onload?.(new ProgressEvent('load') as ProgressEvent<FileReader>)
       }
     }
     // @ts-ignore override
