@@ -71,27 +71,55 @@ function Graph() {
     setStatus("Экспортирован dialogs.json")
   }
 
-  return (
-    <div style={{ display:"grid", gridTemplateColumns: "240px 1fr", width:"100%" }}>
-      <aside style={{ borderRight: "1px solid #eee", padding: 12 }}>
-        <div style={{ display:"flex", gap:8, marginBottom: 8 }}>
+  function saveProject() {
+    try {
+      localStorage.setItem("dialogProject", JSON.stringify(proj))
+      setStatus("Проект сохранён")
+    } catch (e:any) {
+      setStatus("Не удалось сохранить проект: " + e.message)
+    }
+  }
+
+  function loadProject() {
+    const text = localStorage.getItem("dialogProject")
+    if (!text) {
+      setStatus("Нет сохранённого проекта")
+      return
+    }
+    try {
+      const parsed = validateDialogProject(JSON.parse(text))
+      setProj(parsed)
+      setStatus("Проект загружен")
+    } catch (e:any) {
+      setStatus("Ошибка загрузки: " + e.message)
+    }
+  }
+
+    return (
+      <>
+        <div style={{ display:"grid", gridTemplateColumns: "240px 1fr", width:"100%" }}>
+          <aside style={{ borderRight: "1px solid #eee", padding: 12 }}>
+            <button onClick={addNode}>+ Узел</button>
+            <div style={{ marginTop: 12, fontSize:12, opacity:0.8 }}>{status}</div>
+            <p style={{ fontSize:12, opacity:0.8 }}>Подсказка: соединяйте узлы линиями для создания переходов.</p>
+          </aside>
+          <section style={{ position:"relative", height: "calc(100vh - 100px)" }}>
+            <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} fitView>
+              <MiniMap />
+              <Controls />
+              <Background />
+            </ReactFlow>
+          </section>
+        </div>
+        <div style={{ position: "fixed", left: 12, bottom: 12, display: "flex", flexDirection: "column", gap: 4 }}>
+          <button onClick={saveProject}>Сохранить</button>
+          <button onClick={loadProject}>Загрузить</button>
           <button onClick={importJson}>Импорт JSON</button>
           <button onClick={exportJson}>Экспорт JSON</button>
         </div>
-        <button onClick={addNode}>+ Узел</button>
-        <div style={{ marginTop: 12, fontSize:12, opacity:0.8 }}>{status}</div>
-        <p style={{ fontSize:12, opacity:0.8 }}>Подсказка: соединяйте узлы линиями для создания переходов.</p>
-      </aside>
-      <section style={{ position:"relative", height: "calc(100vh - 100px)" }}>
-        <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} fitView>
-          <MiniMap />
-          <Controls />
-          <Background />
-        </ReactFlow>
-      </section>
-    </div>
-  )
-}
+      </>
+    )
+  }
 
 export default function DialogEditor(){
   return (
