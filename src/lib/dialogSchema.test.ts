@@ -18,7 +18,6 @@ describe('dialogSchema', () => {
   })
 
   it('rejects invalid data', () => {
-    // @ts-expect-error testing invalid structure
     expect(() => validateDialogProject({ version: 1 })).toThrow()
   })
 })

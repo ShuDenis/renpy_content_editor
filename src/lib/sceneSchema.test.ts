@@ -23,7 +23,6 @@ describe('sceneSchema', () => {
   })
 
   it('rejects invalid data', () => {
-    // @ts-expect-error testing invalid
     expect(() => validateSceneProject({ project: {} })).toThrow()
   })
 })
