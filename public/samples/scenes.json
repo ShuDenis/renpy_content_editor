@@ -1,0 +1,142 @@
+{
+  "version": "1.0",
+  "project": {
+    "reference_resolution": {
+      "width": 1920,
+      "height": 1080
+    },
+    "coords_mode": "relative"
+  },
+  "scenes": [
+    {
+      "id": "hall",
+      "name": "Коридор",
+      "enter_transition": {
+        "type": "fade",
+        "duration": 0.3
+      },
+      "layers": [
+        {
+          "id": "bg",
+          "type": "image",
+          "image": "bg/hall_day.png",
+          "zorder": 0
+        },
+        {
+          "id": "overlay",
+          "type": "color",
+          "color": "#000000",
+          "alpha": 0.0,
+          "zorder": 100
+        }
+      ],
+      "hotspots": [
+        {
+          "id": "to_classroom",
+          "shape": "rect",
+          "rect": {
+            "x": 0.1,
+            "y": 0.15,
+            "w": 0.15,
+            "h": 0.2
+          },
+          "tooltip": "В класс",
+          "hover_effect": {
+            "highlight": true,
+            "opacity": 0.12,
+            "border": "dashed"
+          },
+          "action": {
+            "type": "go_scene",
+            "scene_id": "classroom",
+            "transition": {
+              "type": "wipeleft",
+              "duration": 0.25
+            }
+          }
+        },
+        {
+          "id": "to_cafeteria",
+          "shape": "polygon",
+          "points": [
+            [
+              0.4,
+              0.22
+            ],
+            [
+              0.55,
+              0.22
+            ],
+            [
+              0.53,
+              0.35
+            ],
+            [
+              0.38,
+              0.33
+            ]
+          ],
+          "tooltip": "Столовая",
+          "action": {
+            "type": "jump_label",
+            "label": "to_cafe_interaction"
+          }
+        },
+        {
+          "id": "poster",
+          "shape": "circle",
+          "circle": {
+            "cx": 0.72,
+            "cy": 0.36,
+            "r": 0.05
+          },
+          "tooltip": "Плакат клуба",
+          "action": {
+            "type": "call_screen",
+            "screen": "poster_popup",
+            "params": {
+              "poster_id": "club_announcement"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "classroom",
+      "name": "Класс",
+      "enter_transition": {
+        "type": "dissolve",
+        "duration": 0.2
+      },
+      "layers": [
+        {
+          "id": "bg",
+          "type": "image",
+          "image": "bg/classroom_day.jpg",
+          "zorder": 0
+        }
+      ],
+      "hotspots": [
+        {
+          "id": "back_to_hall",
+          "shape": "rect",
+          "rect": {
+            "x": 0.02,
+            "y": 0.8,
+            "w": 0.1,
+            "h": 0.15
+          },
+          "tooltip": "Назад в коридор",
+          "action": {
+            "type": "go_scene",
+            "scene_id": "hall",
+            "transition": {
+              "type": "slideright",
+              "duration": 0.25
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

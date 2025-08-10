@@ -1,0 +1,270 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SceneProject",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "project": {
+      "type": "object",
+      "properties": {
+        "reference_resolution": {
+          "type": "object",
+          "properties": {
+            "width": {
+              "type": "number"
+            },
+            "height": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "width",
+            "height"
+          ]
+        },
+        "coords_mode": {
+          "type": "string",
+          "enum": [
+            "relative",
+            "absolute"
+          ]
+        }
+      },
+      "required": [
+        "reference_resolution",
+        "coords_mode"
+      ]
+    },
+    "scenes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "enter_transition": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "duration": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "layers": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "const": "image"
+                    },
+                    "image": {
+                      "type": "string"
+                    },
+                    "zorder": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type",
+                    "image"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "const": "color"
+                    },
+                    "color": {
+                      "type": "string"
+                    },
+                    "alpha": {
+                      "type": "number"
+                    },
+                    "zorder": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type",
+                    "color"
+                  ]
+                }
+              ]
+            }
+          },
+          "hotspots": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "shape": {
+                  "type": "string",
+                  "enum": [
+                    "rect",
+                    "polygon",
+                    "circle"
+                  ]
+                },
+                "rect": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "w": {
+                      "type": "number"
+                    },
+                    "h": {
+                      "type": "number"
+                    }
+                  }
+                },
+                "points": {
+                  "type": "array",
+                  "items": {
+                    "type": "array",
+                    "items": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ],
+                    "minItems": 2,
+                    "maxItems": 2
+                  }
+                },
+                "circle": {
+                  "type": "object",
+                  "properties": {
+                    "cx": {
+                      "type": "number"
+                    },
+                    "cy": {
+                      "type": "number"
+                    },
+                    "r": {
+                      "type": "number"
+                    }
+                  }
+                },
+                "tooltip": {
+                  "type": "string"
+                },
+                "action": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "const": "go_scene"
+                        },
+                        "scene_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "scene_id"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "const": "jump_label"
+                        },
+                        "label": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "label"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "const": "call_label"
+                        },
+                        "label": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "label"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "const": "call_screen"
+                        },
+                        "screen": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "screen"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "shape"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "layers",
+          "hotspots"
+        ]
+      }
+    }
+  },
+  "required": [
+    "version",
+    "project",
+    "scenes"
+  ]
+}
