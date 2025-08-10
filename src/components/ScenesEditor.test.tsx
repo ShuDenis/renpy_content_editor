@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import type { Hotspot } from '@lib/sceneSchema'
 
-describe('hotspot cloning', () => {
+// ScenesEditor uses structuredClone when manipulating hotspots.
+// This test ensures that cloning a hotspot preserves undefined fields and Date instances.
+describe('ScenesEditor hotspot cloning', () => {
   it('preserves undefined and Date properties', () => {
     const original: Hotspot & { created: Date } = {
       id: 'hs1',
