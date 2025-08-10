@@ -23,3 +23,32 @@ export function saveTextFile(content: string, filename: string) {
   a.click()
   URL.revokeObjectURL(url)
 }
+
+// coordinate helpers
+import type { SceneProject } from "@lib/sceneSchema"
+
+export function projectToCanvasScalar(proj: SceneProject, value: number, canvasSize: number, refSize: number): number {
+  return proj.project.coords_mode === "relative" ? value * canvasSize : value * (canvasSize / refSize)
+}
+
+export function canvasToProjectScalar(proj: SceneProject, value: number, canvasSize: number, refSize: number): number {
+  return proj.project.coords_mode === "relative" ? value / canvasSize : value / (canvasSize / refSize)
+}
+
+export function projectToCanvasPoint(proj: SceneProject, x: number, y: number, canvasW: number, canvasH: number) {
+  const refW = proj.project.reference_resolution.width
+  const refH = proj.project.reference_resolution.height
+  return {
+    x: projectToCanvasScalar(proj, x, canvasW, refW),
+    y: projectToCanvasScalar(proj, y, canvasH, refH)
+  }
+}
+
+export function canvasToProjectPoint(proj: SceneProject, x: number, y: number, canvasW: number, canvasH: number) {
+  const refW = proj.project.reference_resolution.width
+  const refH = proj.project.reference_resolution.height
+  return {
+    x: canvasToProjectScalar(proj, x, canvasW, refW),
+    y: canvasToProjectScalar(proj, y, canvasH, refH)
+  }
+}
