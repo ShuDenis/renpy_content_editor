@@ -89,6 +89,9 @@ describe('ScenesEditor', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCanvas();
+
+    localStorage.clear();
+
     ;(globalThis as any).fetch = vi.fn(() =>
       Promise.resolve({
         ok: true,
