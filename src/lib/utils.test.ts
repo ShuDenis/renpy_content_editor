@@ -51,9 +51,11 @@ describe('file helpers', () => {
     const content = 'hello world'
     const file = new File([content], 'test.txt', { type: 'text/plain' })
 
+    const remove = vi.fn()
     const input: any = {
       type: '', accept: '', files: [file], onchange: null,
-      click: () => input.onchange && input.onchange()
+      click: () => input.onchange && input.onchange(),
+      remove
     }
     // @ts-ignore override
     document.createElement = vi.fn((tag: string) => tag === 'input' ? input : originalCreateElement.call(document, tag))
@@ -75,11 +77,17 @@ describe('file helpers', () => {
 
     const text = await loadFileAsText('.txt')
     expect(text).toBe(content)
+    expect(remove).toHaveBeenCalled()
+
+    document.createElement = originalCreateElement
   })
 
   it('triggers download when saving text', () => {
     const click = vi.fn()
-    const anchor: any = { href: '', download: '', click }
+    const remove = vi.fn()
+    const anchor: any = { href: '', download: '', click, remove }
+    const originalCreate = document.createElement
+
     // @ts-ignore
     document.createElement = vi.fn((tag: string) => tag === 'a' ? anchor : originalCreateElement.call(document, tag))
 
@@ -94,6 +102,7 @@ describe('file helpers', () => {
 
     expect(createURL).toHaveBeenCalled()
     expect(click).toHaveBeenCalled()
+    expect(remove).toHaveBeenCalled()
     expect(revokeURL).toHaveBeenCalled()
   })
 })
