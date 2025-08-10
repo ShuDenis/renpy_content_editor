@@ -1,5 +1,15 @@
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('@lib/utils', async () => {
+  const actual = await vi.importActual<any>('@lib/utils');
+  return {
+    ...actual,
+    loadFileAsText: vi.fn(),
+    saveTextFile: vi.fn(),
+  };
+});
+
 import ScenesEditor from './ScenesEditor';
 import { loadFileAsText, saveTextFile } from '@lib/utils';
 
@@ -38,16 +48,6 @@ describe('ScenesEditor hotspot cloning', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // ЧАСТЬ 2: тесты компонента ScenesEditor (импорт/экспорт и добавление хотспота)
 // ─────────────────────────────────────────────────────────────────────────────
-
-// mock utils
-vi.mock('@lib/utils', async () => {
-  const actual = await vi.importActual<any>('@lib/utils');
-  return {
-    ...actual,
-    loadFileAsText: vi.fn(),
-    saveTextFile: vi.fn(),
-  };
-});
 
 const sampleProject = {
   version: '1.0',
@@ -89,6 +89,7 @@ describe('ScenesEditor', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCanvas();
+    localStorage.clear();
     global.fetch = vi.fn(() =>
       Promise.resolve({
         ok: true,
@@ -112,7 +113,7 @@ describe('ScenesEditor', () => {
   it('adds rect hotspot via panel (matches current UI)', async () => {
     const { getByText } = render(<ScenesEditor />);
     await waitFor(() => getByText('Загружен samples/scenes.json'));
-    fireEvent.click(getByText('+ Rect Hotspot'));
+    fireEvent.click(getByText('+ Rect'));
     await waitFor(() => getByText('Добавлен прямоугольный хотспот'));
   });
 
