@@ -35,6 +35,18 @@ describe('coordinate helpers', () => {
 })
 
 describe('file helpers', () => {
+  const originalCreateElement = document.createElement
+  const originalFileReader = global.FileReader
+  const originalCreateObjectURL = global.URL.createObjectURL
+  const originalRevokeObjectURL = global.URL.revokeObjectURL
+
+  afterEach(() => {
+    document.createElement = originalCreateElement
+    global.FileReader = originalFileReader
+    global.URL.createObjectURL = originalCreateObjectURL
+    global.URL.revokeObjectURL = originalRevokeObjectURL
+  })
+
   it('reads text from selected file', async () => {
     const content = 'hello world'
     const file = new File([content], 'test.txt', { type: 'text/plain' })
@@ -45,22 +57,21 @@ describe('file helpers', () => {
       click: () => input.onchange && input.onchange(),
       remove
     }
-    const originalCreateElement = document.createElement
     // @ts-ignore override
     document.createElement = vi.fn((tag: string) => tag === 'input' ? input : originalCreateElement.call(document, tag))
 
-      class FR {
-        result: string | ArrayBuffer | null = null
-        onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null
-        readAsText(_f: File) {
-          this.result = content
-          // call onload with correct `this` context to satisfy TS
-          this.onload?.call(
-            this as unknown as FileReader,
-            new ProgressEvent('load') as ProgressEvent<FileReader>
-          )
-        }
+    class FR {
+      result: string | ArrayBuffer | null = null
+      onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null
+      readAsText(_f: File) {
+        this.result = content
+        // call onload with correct `this` context to satisfy TS
+        this.onload?.call(
+          this as unknown as FileReader,
+          new ProgressEvent('load') as ProgressEvent<FileReader>
+        )
       }
+    }
     // @ts-ignore override
     global.FileReader = FR
 
@@ -76,8 +87,9 @@ describe('file helpers', () => {
     const remove = vi.fn()
     const anchor: any = { href: '', download: '', click, remove }
     const originalCreate = document.createElement
+
     // @ts-ignore
-    document.createElement = vi.fn((tag: string) => tag === 'a' ? anchor : originalCreate(tag))
+    document.createElement = vi.fn((tag: string) => tag === 'a' ? anchor : originalCreateElement.call(document, tag))
 
     const createURL = vi.fn(() => 'blob:url')
     const revokeURL = vi.fn()
@@ -92,7 +104,5 @@ describe('file helpers', () => {
     expect(click).toHaveBeenCalled()
     expect(remove).toHaveBeenCalled()
     expect(revokeURL).toHaveBeenCalled()
-
-    document.createElement = originalCreate
   })
 })
