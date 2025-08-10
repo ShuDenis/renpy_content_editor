@@ -1,16 +1,10 @@
-import React, { useEffect, useState, forwardRef, useImperativeHandle } from "react"
+import React, { useEffect, useState } from "react"
 import ReactFlow, { Background, Controls, MiniMap, addEdge, Connection, ReactFlowProvider, Node, Edge, useEdgesState, useNodesState } from "reactflow"
 import 'reactflow/dist/style.css'
 import { DialogProject, emptyDialogProject, validateDialogProject } from "@lib/dialogSchema"
 import { loadFileAsText, saveTextFile } from "@lib/utils"
-export interface DialogEditorHandle {
-  importJson: () => void
-  exportJson: () => void
-  save: () => void
-  load: () => void
-}
 
-const Graph = forwardRef<DialogEditorHandle>((props, ref) => {
+function Graph() {
   const [proj, setProj] = useState<DialogProject>(emptyDialogProject())
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([] as any)
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([] as any)
@@ -77,36 +71,13 @@ const Graph = forwardRef<DialogEditorHandle>((props, ref) => {
     setStatus("Экспортирован dialogs.json")
   }
 
-  function save() {
-    localStorage.setItem("dialogProject", JSON.stringify(proj))
-    setStatus("Проект сохранён в браузере")
-  }
-
-  function load() {
-    const text = localStorage.getItem("dialogProject")
-    if (!text) {
-      setStatus("Нет сохранённого проекта")
-      return
-    }
-    try {
-      const parsed = validateDialogProject(JSON.parse(text))
-      setProj(parsed)
-      setStatus("Проект загружен из браузера")
-    } catch (e:any) {
-      setStatus("Ошибка: " + e.message)
-    }
-  }
-
-  useImperativeHandle(ref, () => ({
-    importJson,
-    exportJson,
-    save,
-    load,
-  }))
-
   return (
     <div style={{ display:"grid", gridTemplateColumns: "240px 1fr", width:"100%" }}>
       <aside style={{ borderRight: "1px solid #eee", padding: 12 }}>
+        <div style={{ display:"flex", gap:8, marginBottom: 8 }}>
+          <button onClick={importJson}>Импорт JSON</button>
+          <button onClick={exportJson}>Экспорт JSON</button>
+        </div>
         <button onClick={addNode}>+ Узел</button>
         <div style={{ marginTop: 12, fontSize:12, opacity:0.8 }}>{status}</div>
         <p style={{ fontSize:12, opacity:0.8 }}>Подсказка: соединяйте узлы линиями для создания переходов.</p>
@@ -120,10 +91,12 @@ const Graph = forwardRef<DialogEditorHandle>((props, ref) => {
       </section>
     </div>
   )
-})
+}
 
-export default forwardRef<DialogEditorHandle>((props, ref) => (
-  <ReactFlowProvider>
-    <Graph ref={ref} />
-  </ReactFlowProvider>
-))
+export default function DialogEditor(){
+  return (
+    <ReactFlowProvider>
+      <Graph />
+    </ReactFlowProvider>
+  )
+}
