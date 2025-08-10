@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
-import { SceneProject, emptyProject, validateSceneProject } from "@lib/sceneSchema"
+import { SceneProject, emptyProject, validateSceneProject, Layer } from "@lib/sceneSchema"
 import type { Point, Hotspot } from "@lib/sceneSchema"
 import { loadFileAsText, saveTextFile, round3, convertProjectCoordsMode } from "@lib/utils"
 import HotspotPanel from "./HotspotPanel"
 import { drawHotspot, hitTestHotspot, translateHotspot, moveVertexTo, setCircleRadius, insertVertex } from "./HotspotShape"
+import LayerPanel from "./LayerPanel"
+import LayerInspector from "./LayerInspector"
 import CanvasView from "./CanvasView"
 
 type Action = NonNullable<Hotspot['action']>
@@ -19,6 +21,9 @@ export default function ScenesEditor() {
   const [manualRes, setManualRes] = useState(false)
   const [preview, setPreview] = useState(false)
   const [useWebGL, setUseWebGL] = useState(false)
+  const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null)
+  const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 })
+
   const resolutions = [
     { label: "640x480", width: 640, height: 480 },
     { label: "800x600", width: 800, height: 600 },
@@ -46,12 +51,18 @@ export default function ScenesEditor() {
   }, [])
 
   useEffect(() => {
+    setSelectedHs(null)
+    setSelectedLayerId(null)
+  }, [activeSceneId])
+
+  useEffect(() => {
     const canvas = canvasRef.current
     const scene = proj.scenes.find(s => s.id === activeSceneId)
     if (!canvas || !scene) return
     const rect = canvas.getBoundingClientRect()
     canvas.width = rect.width
     canvas.height = rect.height
+    setCanvasSize({ width: canvas.width, height: canvas.height })
     const ctx = canvas.getContext("2d")!
     const W = canvas.width, H = canvas.height
     ctx.clearRect(0,0,W,H)
@@ -60,9 +71,6 @@ export default function ScenesEditor() {
     ctx.strokeStyle = "#e9e9e9"
     for (let x=0; x<W; x+=40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke() }
     for (let y=0; y<H; y+=40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke() }
-    // background hint
-    ctx.fillStyle = "#fafafa"
-    ctx.fillRect(0,0,W,H)
 
     // border of scene
     ctx.strokeStyle = "#bbb"
@@ -93,6 +101,70 @@ export default function ScenesEditor() {
     const out = JSON.stringify(proj, null, 2)
     saveTextFile(out, "scenes.json")
     setStatus("Экспортировано scenes.json")
+  }
+
+  function addImageLayer() {
+    const scene = proj.scenes.find(s => s.id === activeSceneId)
+    if (!scene) return
+    const id = "layer_" + Math.random().toString(36).slice(2,8)
+    const layers = [...scene.layers, { id, type: "image" as const, image: "", alpha: 1, zorder: scene.layers.length }]
+    const next = { ...proj, scenes: proj.scenes.map(s => s.id === scene.id ? { ...s, layers } : s) }
+    setProj(validateSceneProject(next))
+    setSelectedLayerId(id)
+  }
+
+  function addColorLayer() {
+    const scene = proj.scenes.find(s => s.id === activeSceneId)
+    if (!scene) return
+    const id = "layer_" + Math.random().toString(36).slice(2,8)
+    const layers = [...scene.layers, { id, type: "color" as const, color: "#000000", alpha: 1, zorder: scene.layers.length }]
+    const next = { ...proj, scenes: proj.scenes.map(s => s.id === scene.id ? { ...s, layers } : s) }
+    setProj(validateSceneProject(next))
+    setSelectedLayerId(id)
+  }
+
+  function updateLayer(id: string, layer: Layer) {
+    const sceneIndex = proj.scenes.findIndex(s => s.id === activeSceneId)
+    if (sceneIndex < 0) return
+    const scene = proj.scenes[sceneIndex]
+    const layers = scene.layers.map(l => l.id === id ? layer : l).map((l,i) => ({ ...l, zorder: i }))
+    const next = { ...proj, scenes: proj.scenes.map((s,i)=> i===sceneIndex? { ...s, layers }: s) }
+    setProj(validateSceneProject(next))
+  }
+
+  function deleteLayer(id: string) {
+    const sceneIndex = proj.scenes.findIndex(s => s.id === activeSceneId)
+    if (sceneIndex < 0) return
+    const scene = proj.scenes[sceneIndex]
+    const layers = scene.layers.filter(l => l.id !== id).map((l,i)=> ({ ...l, zorder: i }))
+    const next = { ...proj, scenes: proj.scenes.map((s,i)=> i===sceneIndex? { ...s, layers }: s) }
+    setProj(validateSceneProject(next))
+    if (selectedLayerId === id) setSelectedLayerId(null)
+  }
+
+  function copyLayer(id: string) {
+    const scene = proj.scenes.find(s => s.id === activeSceneId)
+    if (!scene) return
+    const layer = scene.layers.find(l => l.id === id)
+    if (!layer) return
+    const newId = id + "_copy"
+    const copy: Layer = { ...layer, id: newId }
+    const layers = [...scene.layers, { ...copy, zorder: scene.layers.length }]
+    const next = { ...proj, scenes: proj.scenes.map(s => s.id === scene.id ? { ...s, layers } : s) }
+    setProj(validateSceneProject(next))
+    setSelectedLayerId(newId)
+  }
+
+  function reorderLayers(from: number, to: number) {
+    const sceneIndex = proj.scenes.findIndex(s => s.id === activeSceneId)
+    if (sceneIndex < 0) return
+    const scene = proj.scenes[sceneIndex]
+    const layers = [...scene.layers]
+    const [item] = layers.splice(from, 1)
+    layers.splice(to, 0, item)
+    const relabeled = layers.map((l,i)=> ({ ...l, zorder: i }))
+    const next = { ...proj, scenes: proj.scenes.map((s,i)=> i===sceneIndex? { ...s, layers: relabeled }: s) }
+    setProj(validateSceneProject(next))
   }
 
   function addRectHotspot() {
@@ -227,6 +299,7 @@ export default function ScenesEditor() {
   const activeScene = proj.scenes.find(s => s.id === activeSceneId)
 
   const activeHotspot = selectedHs !== null && activeScene ? activeScene.hotspots![selectedHs] : null
+  const activeLayer = activeScene?.layers.find(l => l.id === selectedLayerId) || null
 
   function handleSceneNameChange(name: string) {
     const sceneIndex = proj.scenes.findIndex(s => s.id === activeSceneId)
@@ -303,20 +376,35 @@ export default function ScenesEditor() {
         <div style={{ marginTop: 12, fontSize:12, opacity:0.8 }}>{status}</div>
       </aside>
       <section style={{ display:"flex", alignItems:"center", justifyContent:"center" }}>
-        <canvas
-          ref={canvasRef}
-          width={960}
-          height={540}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          style={{ width:"100%", height:"100%", maxWidth: "calc(100vw - 580px)", aspectRatio: "16/9", border:"1px solid #ddd", background:"#fff" }}
-        />
+        <div style={{ width:"100%", height:"100%", maxWidth: "calc(100vw - 580px)", aspectRatio: "16/9", position:"relative", border:"1px solid #ddd", background:"#fff" }}>
+          <CanvasView layers={activeScene?.layers || []} width={canvasSize.width} height={canvasSize.height} />
+          <canvas
+            ref={canvasRef}
+            width={960}
+            height={540}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            style={{ position:"absolute", top:0, left:0, width:"100%", height:"100%" }}
+          />
+        </div>
       </section>
       <aside style={{ borderLeft:"1px solid #eee", padding:12, overflowY:"auto" }}>
         {activeScene && (
           <>
-            <strong>Параметры сцены</strong>
+            <strong>Слои</strong>
+            <LayerPanel
+              layers={activeScene.layers}
+              selectedId={selectedLayerId || undefined}
+              onSelect={id => setSelectedLayerId(id)}
+              onAddImage={addImageLayer}
+              onAddColor={addColorLayer}
+              onReorder={reorderLayers}
+              onDelete={deleteLayer}
+              onCopy={copyLayer}
+            />
+            <LayerInspector layer={activeLayer} onChange={l => updateLayer(l.id, l)} />
+            <strong style={{ marginTop:8, display:"block" }}>Параметры сцены</strong>
             <div style={{ display:"flex", flexDirection:"column", gap:4, marginBottom:8 }}>
               <label>Название
                 <input value={activeScene.name||""} onChange={e=>handleSceneNameChange(e.target.value)} />

@@ -1,21 +1,43 @@
 import React, { useEffect, useRef } from "react";
-import { SceneProject, Hotspot } from "@lib/sceneSchema";
+import type { SceneProject, Hotspot, Layer } from "@lib/sceneSchema";
 import { globalImageCache } from "@lib/imageCache";
 import { projectToCanvasScalar, projectToCanvasPoint } from "@lib/utils";
 
-interface CanvasViewProps {
-  project: SceneProject;
-  sceneId: string;
-  useWebGL?: boolean;
-  onExit?: () => void;
-}
+type CanvasViewProps =
+  | {
+      // Расширенный режим: рисуем сцену проекта + хотспоты
+      project: SceneProject;
+      sceneId: string;
+      useWebGL?: boolean;
+      onExit?: () => void;
+      width?: number;
+      height?: number;
+      layers?: never;
+    }
+  | {
+      // Простой режим: рисуем список слоёв как есть (без хотспотов)
+      layers: Layer[];
+      width: number;
+      height: number;
+      project?: never;
+      sceneId?: never;
+      useWebGL?: boolean;
+      onExit?: () => void;
+    };
 
-function drawHotspotPreview(ctx: CanvasRenderingContext2D, proj: SceneProject, hs: Hotspot, W: number, H: number) {
+function drawHotspotPreview(
+  ctx: CanvasRenderingContext2D,
+  proj: SceneProject,
+  hs: Hotspot,
+  W: number,
+  H: number
+) {
   ctx.save();
   ctx.translate(0.5, 0.5);
   ctx.lineWidth = 2;
   ctx.strokeStyle = "#ff0";
   ctx.fillStyle = "rgba(255,255,0,0.15)";
+
   if (hs.shape === "rect" && hs.rect) {
     const refW = proj.project.reference_resolution.width;
     const refH = proj.project.reference_resolution.height;
@@ -26,7 +48,7 @@ function drawHotspotPreview(ctx: CanvasRenderingContext2D, proj: SceneProject, h
     ctx.fillRect(x, y, w, h);
     ctx.strokeRect(x, y, w, h);
   } else if (hs.shape === "polygon" && hs.points) {
-    const pts = hs.points.map(p => projectToCanvasPoint(proj, p[0], p[1], W, H));
+    const pts = hs.points.map((p) => projectToCanvasPoint(proj, p[0], p[1], W, H));
     if (pts.length) {
       ctx.beginPath();
       ctx.moveTo(pts[0].x, pts[0].y);
@@ -46,65 +68,133 @@ function drawHotspotPreview(ctx: CanvasRenderingContext2D, proj: SceneProject, h
     ctx.fill();
     ctx.stroke();
   }
+
   ctx.restore();
 }
 
-export default function CanvasView({ project, sceneId, useWebGL, onExit }: CanvasViewProps) {
+export default function CanvasView(props: CanvasViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const scene = project.scenes.find(s => s.id === sceneId);
+
+  // Вычисляем источник слоёв/хотспотов в зависимости от режима
+  const project = "project" in props ? props.project : undefined;
+  const sceneId = "sceneId" in props ? props.sceneId : undefined;
+  const useWebGL = props.useWebGL;
+  const onExit = props.onExit;
+
+  const scene = project ? project.scenes.find((s) => s.id === sceneId) : undefined;
+  const layersToDraw: Layer[] = scene ? scene.layers : (("layers" in props && props.layers) || []);
+  const hotspots: Hotspot[] = scene?.hotspots ?? [];
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !scene) return;
-    const W = (canvas.width = canvas.clientWidth);
-    const H = (canvas.height = canvas.clientHeight);
+    if (!canvas) return;
+
+    // Размеры канваса: если передали width/height — используем их, иначе растягиваем по контейнеру
+    const W =
+      "width" in props && typeof props.width === "number"
+        ? (canvas.width = props.width)
+        : (canvas.width = canvas.clientWidth);
+    const H =
+      "height" in props && typeof props.height === "number"
+        ? (canvas.height = props.height)
+        : (canvas.height = canvas.clientHeight);
 
     (async () => {
-      const images = await Promise.all(
-        scene.layers
-          .filter(l => l.type === "image")
-          .map(async l => ({ z: l.zorder || 0, img: await globalImageCache.load(l.image) }))
+      // Предзагрузка изображений через LRU-кеш
+      const imageLayers = layersToDraw.filter((l) => l.type === "image");
+      const loaded = await Promise.all(
+        imageLayers.map(async (l) => ({
+          key: l.image,
+          z: l.zorder ?? 0,
+          alpha: (l as any).alpha ?? 1,
+          img: await globalImageCache.load(l.image),
+        }))
       );
+      const imageMap = new Map(loaded.map((e) => [e.key, e]));
 
       let gl: WebGLRenderingContext | null = null;
       if (useWebGL) {
         gl = canvas.getContext("webgl");
       }
+
       if (gl) {
-        // Simple WebGL drawing: draw each image as textured quad
+        // Пока что чистим фон вебглом, остальное рисуем 2D (позже можно заменить на текстурные квадраты)
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.clearColor(0, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
-        // Fall back to 2D for drawing images for now
+
         const ctx2d = canvas.getContext("2d");
-        if (ctx2d) {
-          images.sort((a, b) => a.z - b.z).forEach(({ img }) => {
-            ctx2d.drawImage(img, 0, 0, W, H);
-          });
-          for (const hs of scene.hotspots ?? []) {
-            if (!hs.hidden) drawHotspotPreview(ctx2d, project, hs, W, H);
+        if (!ctx2d) return;
+        ctx2d.clearRect(0, 0, W, H);
+
+        // Единая сортировка всех слоёв по zorder
+        const sorted = [...layersToDraw].sort((a, b) => (a.zorder ?? 0) - (b.zorder ?? 0));
+        for (const layer of sorted) {
+          if (layer.type === "color") {
+            ctx2d.globalAlpha = (layer as any).alpha ?? 1;
+            ctx2d.fillStyle = layer.color;
+            ctx2d.fillRect(0, 0, W, H);
+          } else if (layer.type === "image") {
+            const rec = imageMap.get(layer.image);
+            if (rec?.img) {
+              ctx2d.globalAlpha = rec.alpha;
+              ctx2d.drawImage(rec.img, 0, 0, W, H);
+            }
+          }
+        }
+        ctx2d.globalAlpha = 1;
+
+        // Хотспоты
+        if (project && scene) {
+          for (const hs of hotspots) {
+            // @ts-expect-error optional domain-specific flag
+            if (!(hs as any).hidden) drawHotspotPreview(ctx2d, project, hs, W, H);
           }
         }
       } else {
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
+
         ctx.clearRect(0, 0, W, H);
-        images.sort((a, b) => a.z - b.z).forEach(({ img }) => {
-          ctx.drawImage(img, 0, 0, W, H);
-        });
-        for (const hs of scene.hotspots ?? []) {
-          if (!hs.hidden) drawHotspotPreview(ctx, project, hs, W, H);
+
+        // Единая сортировка всех слоёв по zorder
+        const sorted = [...layersToDraw].sort((a, b) => (a.zorder ?? 0) - (b.zorder ?? 0));
+        for (const layer of sorted) {
+          if (layer.type === "color") {
+            ctx.globalAlpha = (layer as any).alpha ?? 1;
+            ctx.fillStyle = layer.color;
+            ctx.fillRect(0, 0, W, H);
+          } else if (layer.type === "image") {
+            const rec = imageMap.get(layer.image);
+            if (rec?.img) {
+              ctx.globalAlpha = rec.alpha;
+              ctx.drawImage(rec.img, 0, 0, W, H);
+            }
+          }
+        }
+
+        ctx.globalAlpha = 1;
+
+        // Хотспоты
+        if (project && scene) {
+          for (const hs of hotspots) {
+            // @ts-expect-error optional domain-specific flag
+            if (!(hs as any).hidden) drawHotspotPreview(ctx, project, hs, W, H);
+          }
         }
       }
     })();
-  }, [project, scene, useWebGL]);
+  }, [project, sceneId, scene, layersToDraw, props.width, props.height, useWebGL]);
 
-  return (
-    <div
-      style={{ position: "fixed", inset: 0, background: "#000", zIndex: 1000 }}
-      onClick={onExit}
-    >
-      <canvas ref={canvasRef} style={{ width: "100%", height: "100%" }} />
-    </div>
-  );
+  // Режим полноэкранного превью (если передан onExit) — кликом закрываем
+  if (onExit) {
+    return (
+      <div style={{ position: "fixed", inset: 0, background: "#000", zIndex: 1000 }} onClick={onExit}>
+        <canvas ref={canvasRef} style={{ width: "100%", height: "100%" }} />
+      </div>
+    );
+  }
+
+  // Иначе — «встраиваемый» канвас (как в простом варианте)
+  return <canvas ref={canvasRef} style={{ width: "100%", height: "100%" }} />;
 }

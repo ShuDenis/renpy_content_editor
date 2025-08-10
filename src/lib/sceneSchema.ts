@@ -27,15 +27,33 @@ export const HotspotSchema = z.object({
   hidden: z.boolean().default(false)
 })
 
-const LayerImage = z.object({ id: z.string(), type: z.literal("image"), image: z.string(), zorder: z.number().default(0) })
-const LayerColor = z.object({ id: z.string(), type: z.literal("color"), color: z.string(), alpha: z.number().default(1), zorder: z.number().default(0) })
-const Layer = z.discriminatedUnion("type", [LayerImage, LayerColor])
+const LayerImage = z.object({
+  id: z.string(),
+  type: z.literal("image"),
+  image: z.string(),
+  alpha: z.number().default(1),
+  zorder: z.number().default(0),
+  enter_transition: Transition.optional(),
+  exit_transition: Transition.optional(),
+})
+
+const LayerColor = z.object({
+  id: z.string(),
+  type: z.literal("color"),
+  color: z.string(),
+  alpha: z.number().default(1),
+  zorder: z.number().default(0),
+  enter_transition: Transition.optional(),
+  exit_transition: Transition.optional(),
+})
+
+const LayerSchema = z.discriminatedUnion("type", [LayerImage, LayerColor])
 
 const Scene = z.object({
   id: z.string(),
   name: z.string().optional(),
   enter_transition: Transition.optional(),
-  layers: z.array(Layer).default([]),
+  layers: z.array(LayerSchema).default([]),
   hotspots: z.array(HotspotSchema).default([])
 })
 
@@ -52,6 +70,7 @@ export const SceneProjectSchema = z.object({
 
 export type SceneProject = z.infer<typeof SceneProjectSchema>
 export type Hotspot = z.infer<typeof HotspotSchema>
+export type Layer = z.infer<typeof LayerSchema>
 
 export function validateSceneProject(data: unknown): SceneProject {
   const parsed = SceneProjectSchema.parse(data)
