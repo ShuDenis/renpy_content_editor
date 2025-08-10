@@ -148,9 +148,10 @@ export function moveVertexTo(hs: Hotspot, proj: SceneProject, index: number, x: 
 export function setCircleRadius(hs: Hotspot, proj: SceneProject, x: number, y: number, W: number, H: number) {
   if (hs.shape !== "circle" || !hs.circle) return
   const refW = proj.project.reference_resolution.width
+  const refH = proj.project.reference_resolution.height
   const cx = projectToCanvasScalar(proj, hs.circle.cx, W, refW)
-  const cy = projectToCanvasScalar(proj, hs.circle.cy, H, refW)
-  const rCanvas = distance(x,y,cx,cy)
+  const cy = projectToCanvasScalar(proj, hs.circle.cy, H, refH)
+  const rCanvas = distance(x, y, cx, cy)
   const rProj = canvasToProjectScalar(proj, rCanvas, W, refW)
   hs.circle.r = rProj
 }

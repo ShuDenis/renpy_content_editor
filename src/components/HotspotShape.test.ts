@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { drawHotspot, hitTestHotspot, translateHotspot, moveVertexTo, setCircleRadius, insertVertex } from './HotspotShape'
 import type { SceneProject, Hotspot } from '@lib/sceneSchema'
+import { projectToCanvasScalar } from '@lib/utils'
 
 const proj: SceneProject = {
   version: '1.0',
@@ -82,5 +83,24 @@ describe('hit testing and transformations', () => {
     const circle: Hotspot = { id:'c', hidden:false, shape:'circle', circle:{cx:0.1, cy:0.1, r:0.1} }
     setCircleRadius(circle, proj, 30, 10, 100, 100)
     expect(circle.circle?.r).toBeCloseTo(0.2)
+  })
+
+  it('sets circle radius with differing width and height', () => {
+    const projAbs: SceneProject = {
+      version: '1.0',
+      project: {
+        reference_resolution: { width: 100, height: 200 },
+        coords_mode: 'absolute'
+      },
+      scenes: []
+    }
+    const circle: Hotspot = { id: 'c', hidden: false, shape: 'circle', circle: { cx: 30, cy: 100, r: 10 } }
+    const W = 100, H = 200
+    const refW = projAbs.project.reference_resolution.width
+    const refH = projAbs.project.reference_resolution.height
+    const cx = projectToCanvasScalar(projAbs, circle.circle!.cx, W, refW)
+    const cy = projectToCanvasScalar(projAbs, circle.circle!.cy, H, refH)
+    setCircleRadius(circle, projAbs, cx + 25, cy, W, H)
+    expect(circle.circle?.r).toBeCloseTo(25)
   })
 })
