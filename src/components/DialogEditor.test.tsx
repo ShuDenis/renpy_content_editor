@@ -65,7 +65,9 @@ import DialogEditor from './DialogEditor'
 import * as ReactFlowModule from 'reactflow'
 import { validateDialogProject } from '@lib/dialogSchema'
 
-const { __rf } = ReactFlowModule as any
+
+const __rf = (ReactFlowModule as any).__rf
+
 
 describe('DialogEditor', () => {
   it('addNode adds a node to project', () => {

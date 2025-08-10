@@ -6,7 +6,7 @@ type Props = {
   onChange(layer: Layer): void
 }
 
-function TransitionEditor({ label, value, onChange }: { label: string; value?: { type: string; duration?: number }; onChange(v?: { type: string; duration?: number }): void }) {
+function TransitionEditor({ label, value, onChange }: { label: string; value?: { type: string; duration?: number; easing?: string }; onChange(v?: { type: string; duration?: number; easing?: string }): void }) {
   return (
     <div style={{ marginTop: 4 }}>
       <label>{label} type
@@ -14,7 +14,7 @@ function TransitionEditor({ label, value, onChange }: { label: string; value?: {
           value={value?.type || ""}
           onChange={e => {
             const type = e.target.value
-            onChange(type ? { type, duration: value?.duration } : undefined)
+            onChange(type ? { type, duration: value?.duration, easing: value?.easing } : undefined)
           }}
         />
       </label>
@@ -29,6 +29,16 @@ function TransitionEditor({ label, value, onChange }: { label: string; value?: {
           }}
         />
       </label>
+      <label>
+        easing
+        <input
+          value={value?.easing || ""}
+          onChange={e => {
+            const easing = e.target.value
+            onChange(value ? { ...value, easing } : { type: "", easing })
+          }}
+        />
+      </label>
     </div>
   )
 }
@@ -38,9 +48,27 @@ export default function LayerInspector({ layer, onChange }: Props) {
   return (
     <div style={{ marginTop: 8 }}>
       {layer.type === "image" && (
-        <label>Image
-          <input value={layer.image} onChange={e => onChange({ ...layer, image: e.target.value })} />
-        </label>
+        <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+          <span style={{ fontSize:12, wordBreak:"break-all" }}>{layer.image}</span>
+          <button
+            onClick={() => {
+              const input = document.createElement("input")
+              input.type = "file"
+              input.accept = "image/png,image/jpeg,image/webp"
+              input.onchange = () => {
+                const file = input.files?.[0]
+                if (file) {
+                  const url = URL.createObjectURL(file)
+                  onChange({ ...layer, image: url })
+                }
+                input.remove()
+              }
+              input.click()
+            }}
+          >
+            Replace image
+          </button>
+        </div>
       )}
       {layer.type === "color" && (
         <label>Color

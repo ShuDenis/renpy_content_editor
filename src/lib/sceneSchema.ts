@@ -5,7 +5,22 @@ export const Circle = z.object({ cx: z.number(), cy: z.number(), r: z.number() }
 export const PointSchema = z.tuple([z.number(), z.number()])
 export type Point = z.infer<typeof PointSchema>
 
-const Transition = z.object({ type: z.string(), duration: z.number().optional() })
+function exprValid(expr?: string): boolean {
+  if (!expr) return true
+  try {
+    // eslint-disable-next-line no-new-func
+    new Function(`return (${expr})`)
+    return true
+  } catch {
+    return false
+  }
+}
+
+const Transition = z.object({
+  type: z.string(),
+  duration: z.number().optional(),
+  easing: z.string().optional(),
+})
 
 const Action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("go_scene"), scene_id: z.string(), transition: Transition.optional() }),
@@ -23,6 +38,8 @@ export const HotspotSchema = z.object({
   circle: Circle.optional(),
   tooltip: z.string().optional(),
   hover_effect: z.record(z.any()).optional(),
+  visible_if: z.string().optional().refine(exprValid, { message: "Invalid expression" }),
+  enabled_if: z.string().optional().refine(exprValid, { message: "Invalid expression" }),
   action: Action.optional(),
   hidden: z.boolean().default(false)
 })
