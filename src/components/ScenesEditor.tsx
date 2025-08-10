@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
 import { SceneProject, emptyProject, validateSceneProject } from "@lib/sceneSchema"
 import type { Point, Hotspot } from "@lib/sceneSchema"
-import { loadFileAsText, saveTextFile } from "@lib/utils"
+import { loadFileAsText, saveTextFile, round3, convertProjectCoordsMode } from "@lib/utils"
 import HotspotPanel from "./HotspotPanel"
 import { drawHotspot, hitTestHotspot, translateHotspot, moveVertexTo, setCircleRadius, insertVertex } from "./HotspotShape"
 
@@ -15,6 +15,14 @@ export default function ScenesEditor() {
   const [activeSceneId, setActiveSceneId] = useState<string | undefined>(undefined)
   const [drag, setDrag] = useState<{ hsIndex: number; mode: "move"|"vertex"|"radius"; vertexIndex?: number; prevX: number; prevY: number } | null>(null)
   const [selectedHs, setSelectedHs] = useState<number | null>(null)
+  const [manualRes, setManualRes] = useState(false)
+  const resolutions = [
+    { label: "640x480", width: 640, height: 480 },
+    { label: "800x600", width: 800, height: 600 },
+    { label: "1024x768", width: 1024, height: 768 },
+    { label: "1280x720", width: 1280, height: 720 },
+    { label: "1920x1080", width: 1920, height: 1080 },
+  ]
 
   // load sample on first run
   useEffect(() => {
@@ -231,6 +239,47 @@ export default function ScenesEditor() {
           <button onClick={onImportClicked}>Импорт JSON</button>
           <button onClick={onExportClicked}>Экспорт JSON</button>
         </div>
+        <div style={{ marginBottom:8 }}>
+          <strong>Экран</strong>
+          {!manualRes ? (
+            <div style={{ display:"flex", gap:4 }}>
+              <select value={`${proj.project.reference_resolution.width}x${proj.project.reference_resolution.height}`} onChange={e=>{
+                const [w,h] = e.target.value.split('x').map(n=>parseInt(n))
+                const next = { ...proj, project: { ...proj.project, reference_resolution: { width:w, height:h } } }
+                setProj(validateSceneProject(next))
+              }}>
+                {resolutions.map(r=> (
+                  <option key={r.label} value={`${r.width}x${r.height}`}>{r.label}</option>
+                ))}
+              </select>
+              <button onClick={()=>setManualRes(true)}>Manual</button>
+            </div>
+          ) : (
+            <div style={{ display:"flex", gap:4 }}>
+              <input type="number" value={proj.project.reference_resolution.width} onChange={e=>{
+                const w = parseInt(e.target.value)||0
+                const next = { ...proj, project: { ...proj.project, reference_resolution: { ...proj.project.reference_resolution, width:w } } }
+                setProj(validateSceneProject(next))
+              }} />
+              <input type="number" value={proj.project.reference_resolution.height} onChange={e=>{
+                const h = parseInt(e.target.value)||0
+                const next = { ...proj, project: { ...proj.project, reference_resolution: { ...proj.project.reference_resolution, height:h } } }
+                setProj(validateSceneProject(next))
+              }} />
+              <button onClick={()=>setManualRes(false)}>Presets</button>
+            </div>
+          )}
+          <label style={{ display:'block', marginTop:4 }}>Mode
+            <select value={proj.project.coords_mode} onChange={e=>{
+              const mode = e.target.value as 'relative'|'absolute'
+              const converted = convertProjectCoordsMode(proj, mode)
+              setProj(validateSceneProject(converted))
+            }}>
+              <option value="relative">relative</option>
+              <option value="absolute">absolute</option>
+            </select>
+          </label>
+        </div>
         <HotspotPanel onAddRect={addRectHotspot} onAddPolygon={addPolygonHotspot} onAddCircle={addCircleHotspot} />
         <strong>Сцены</strong>
         <ul style={{ listStyle:"none", padding:0 }}>{sceneList}</ul>
@@ -272,17 +321,17 @@ export default function ScenesEditor() {
                 <strong>Свойства</strong>
                 {activeHotspot.shape === "rect" && activeHotspot.rect && (
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:4 }}>
-                    <label>X<input type="number" step="0.01" value={activeHotspot.rect.x} onChange={e=>updateHotspot(selectedHs!, { ...activeHotspot, rect:{ ...activeHotspot.rect!, x: parseFloat(e.target.value) } })} /></label>
-                    <label>Y<input type="number" step="0.01" value={activeHotspot.rect.y} onChange={e=>updateHotspot(selectedHs!, { ...activeHotspot, rect:{ ...activeHotspot.rect!, y: parseFloat(e.target.value) } })} /></label>
-                    <label>W<input type="number" step="0.01" value={activeHotspot.rect.w} onChange={e=>updateHotspot(selectedHs!, { ...activeHotspot, rect:{ ...activeHotspot.rect!, w: parseFloat(e.target.value) } })} /></label>
-                    <label>H<input type="number" step="0.01" value={activeHotspot.rect.h} onChange={e=>updateHotspot(selectedHs!, { ...activeHotspot, rect:{ ...activeHotspot.rect!, h: parseFloat(e.target.value) } })} /></label>
+                    <label>X<input type="number" step="0.001" value={activeHotspot.rect.x} onChange={e=>updateHotspot(selectedHs!, { ...activeHotspot, rect:{ ...activeHotspot.rect!, x: round3(parseFloat(e.target.value)) } })} /></label>
+                    <label>Y<input type="number" step="0.001" value={activeHotspot.rect.y} onChange={e=>updateHotspot(selectedHs!, { ...activeHotspot, rect:{ ...activeHotspot.rect!, y: round3(parseFloat(e.target.value)) } })} /></label>
+                    <label>W<input type="number" step="0.001" value={activeHotspot.rect.w} onChange={e=>updateHotspot(selectedHs!, { ...activeHotspot, rect:{ ...activeHotspot.rect!, w: round3(parseFloat(e.target.value)) } })} /></label>
+                    <label>H<input type="number" step="0.001" value={activeHotspot.rect.h} onChange={e=>updateHotspot(selectedHs!, { ...activeHotspot, rect:{ ...activeHotspot.rect!, h: round3(parseFloat(e.target.value)) } })} /></label>
                   </div>
                 )}
                 {activeHotspot.shape === "circle" && activeHotspot.circle && (
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:4 }}>
-                    <label>CX<input type="number" step="0.01" value={activeHotspot.circle.cx} onChange={e=>updateHotspot(selectedHs!, { ...activeHotspot, circle:{ ...activeHotspot.circle!, cx: parseFloat(e.target.value) } })} /></label>
-                    <label>CY<input type="number" step="0.01" value={activeHotspot.circle.cy} onChange={e=>updateHotspot(selectedHs!, { ...activeHotspot, circle:{ ...activeHotspot.circle!, cy: parseFloat(e.target.value) } })} /></label>
-                    <label>R<input type="number" step="0.01" value={activeHotspot.circle.r} onChange={e=>updateHotspot(selectedHs!, { ...activeHotspot, circle:{ ...activeHotspot.circle!, r: parseFloat(e.target.value) } })} /></label>
+                    <label>CX<input type="number" step="0.001" value={activeHotspot.circle.cx} onChange={e=>updateHotspot(selectedHs!, { ...activeHotspot, circle:{ ...activeHotspot.circle!, cx: round3(parseFloat(e.target.value)) } })} /></label>
+                    <label>CY<input type="number" step="0.001" value={activeHotspot.circle.cy} onChange={e=>updateHotspot(selectedHs!, { ...activeHotspot, circle:{ ...activeHotspot.circle!, cy: round3(parseFloat(e.target.value)) } })} /></label>
+                    <label>R<input type="number" step="0.001" value={activeHotspot.circle.r} onChange={e=>updateHotspot(selectedHs!, { ...activeHotspot, circle:{ ...activeHotspot.circle!, r: round3(parseFloat(e.target.value)) } })} /></label>
                   </div>
                 )}
                 {activeHotspot.shape === "polygon" && activeHotspot.points && (
@@ -302,12 +351,12 @@ export default function ScenesEditor() {
                     </label>
                     {activeHotspot.points.map((pt,i)=> (
                       <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:4 }}>
-                        <input type="number" step="0.01" value={pt[0]} onChange={e=>{
-                          const pts = activeHotspot.points!.map((p,j)=> j===i?[parseFloat(e.target.value),p[1]] as [number,number]:p as [number,number])
+                        <input type="number" step="0.001" value={pt[0]} onChange={e=>{
+                          const pts = activeHotspot.points!.map((p,j)=> j===i?[round3(parseFloat(e.target.value)),p[1]] as [number,number]:p as [number,number])
                           updateHotspot(selectedHs!, { ...activeHotspot, points: pts as [number,number][] })
                         }} />
-                        <input type="number" step="0.01" value={pt[1]} onChange={e=>{
-                          const pts = activeHotspot.points!.map((p,j)=> j===i?[p[0],parseFloat(e.target.value)] as [number,number]:p as [number,number])
+                        <input type="number" step="0.001" value={pt[1]} onChange={e=>{
+                          const pts = activeHotspot.points!.map((p,j)=> j===i?[p[0],round3(parseFloat(e.target.value))] as [number,number]:p as [number,number])
                           updateHotspot(selectedHs!, { ...activeHotspot, points: pts as [number,number][] })
                         }} />
                       </div>
