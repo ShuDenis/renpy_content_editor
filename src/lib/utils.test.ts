@@ -112,6 +112,23 @@ describe('file helpers', () => {
     document.createElement = originalCreateElement
   })
 
+  it('returns null and removes element when no file selected', async () => {
+    const remove = vi.fn()
+    const input: any = {
+      type: '', accept: '', files: [], onchange: null,
+      click: () => input.onchange && input.onchange(),
+      remove
+    }
+    // @ts-ignore override
+    document.createElement = vi.fn((tag: string) => tag === 'input' ? input : originalCreateElement.call(document, tag))
+
+    const text = await loadFileAsText('.txt')
+    expect(text).toBeNull()
+    expect(remove).toHaveBeenCalled()
+
+    document.createElement = originalCreateElement
+  })
+
   it('triggers download when saving text', () => {
     const click = vi.fn()
     const remove = vi.fn()
