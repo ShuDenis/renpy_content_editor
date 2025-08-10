@@ -12,6 +12,8 @@ const HANDLE = 6
 
 export function drawHotspot(ctx: CanvasRenderingContext2D, proj: SceneProject, hs: Hotspot, W: number, H: number) {
   ctx.save()
+  ctx.translate(0.5,0.5)
+  ctx.lineWidth = 1
   ctx.strokeStyle = "#333"
   ctx.fillStyle = "rgba(0,0,0,0.06)"
   if (hs.shape === "rect" && hs.rect) {

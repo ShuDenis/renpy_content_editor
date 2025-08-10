@@ -24,6 +24,7 @@ export const HotspotSchema = z.object({
   tooltip: z.string().optional(),
   hover_effect: z.record(z.any()).optional(),
   action: Action.optional(),
+  hidden: z.boolean().default(false)
 })
 
 const LayerImage = z.object({ id: z.string(), type: z.literal("image"), image: z.string(), zorder: z.number().default(0) })
