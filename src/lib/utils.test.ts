@@ -47,14 +47,18 @@ describe('file helpers', () => {
     // @ts-ignore override
     document.createElement = vi.fn((tag: string) => tag === 'input' ? input : originalCreateElement.call(document, tag))
 
-    class FR {
-      result: string | ArrayBuffer | null = null
-      onload: ((ev: ProgressEvent<FileReader>) => any) | null = null
-      readAsText(f: File) {
-        this.result = content
-        this.onload?.(new ProgressEvent('load') as ProgressEvent<FileReader>)
+      class FR {
+        result: string | ArrayBuffer | null = null
+        onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => any) | null = null
+        readAsText(_f: File) {
+          this.result = content
+          // call onload with correct `this` context to satisfy TS
+          this.onload?.call(
+            this as unknown as FileReader,
+            new ProgressEvent('load') as ProgressEvent<FileReader>
+          )
+        }
       }
-    }
     // @ts-ignore override
     global.FileReader = FR
 
