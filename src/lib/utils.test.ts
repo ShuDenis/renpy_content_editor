@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   projectToCanvasScalar,
   canvasToProjectScalar,
@@ -36,15 +36,15 @@ describe('coordinate helpers', () => {
 
 describe('file helpers', () => {
   const originalCreateElement = document.createElement
-  const originalFileReader = global.FileReader
-  const originalCreateObjectURL = global.URL.createObjectURL
-  const originalRevokeObjectURL = global.URL.revokeObjectURL
+  const originalFileReader = globalThis.FileReader
+  const originalCreateObjectURL = globalThis.URL.createObjectURL
+  const originalRevokeObjectURL = globalThis.URL.revokeObjectURL
 
   afterEach(() => {
     document.createElement = originalCreateElement
-    global.FileReader = originalFileReader
-    global.URL.createObjectURL = originalCreateObjectURL
-    global.URL.revokeObjectURL = originalRevokeObjectURL
+    globalThis.FileReader = originalFileReader
+    globalThis.URL.createObjectURL = originalCreateObjectURL
+    globalThis.URL.revokeObjectURL = originalRevokeObjectURL
   })
 
   it('reads text from selected file', async () => {
@@ -73,7 +73,7 @@ describe('file helpers', () => {
       }
     }
     // @ts-ignore override
-    global.FileReader = FR
+    globalThis.FileReader = FR
 
     const text = await loadFileAsText('.txt')
     expect(text).toBe(content)
@@ -94,9 +94,9 @@ describe('file helpers', () => {
     const createURL = vi.fn(() => 'blob:url')
     const revokeURL = vi.fn()
     // @ts-ignore
-    global.URL.createObjectURL = createURL
+    globalThis.URL.createObjectURL = createURL
     // @ts-ignore
-    global.URL.revokeObjectURL = revokeURL
+    globalThis.URL.revokeObjectURL = revokeURL
 
     saveTextFile('data', 'file.txt')
 
