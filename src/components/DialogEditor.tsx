@@ -3,6 +3,7 @@ import ReactFlow, { Background, Controls, MiniMap, addEdge, Connection, ReactFlo
 import 'reactflow/dist/style.css'
 import { DialogProject, emptyDialogProject, validateDialogProject } from "@lib/dialogSchema"
 import { loadFileAsText, saveTextFile } from "@lib/utils"
+import { useUndoState } from "@lib/useUndo"
 
 interface DialogNodeData {
   label: string
@@ -14,10 +15,24 @@ type DialogNode = Node<DialogNodeData>
 type DialogEdge = Edge<DialogEdgeData>
 
 function Graph() {
-  const [proj, setProj] = useState<DialogProject>(emptyDialogProject())
+  const [proj, setProj, _resetProj, undo, redo] = useUndoState<DialogProject>(emptyDialogProject(), validateDialogProject)
   const [nodes, setNodes, onNodesChange] = useNodesState<DialogNodeData>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<DialogEdgeData>([])
   const [status, setStatus] = useState("")
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+        e.preventDefault()
+        undo()
+      } else if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === "y" || (e.shiftKey && e.key.toLowerCase() === "z"))) {
+        e.preventDefault()
+        redo()
+      }
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [undo, redo])
 
   useEffect(() => {
     // project -> graph
@@ -42,28 +57,32 @@ function Graph() {
 
   function addNode() {
     const id = "n_" + Math.random().toString(36).slice(2,8)
-    const d0: DialogProject["dialogs"][number] = proj.dialogs[0] || { id: "dlg_1", nodes: [] }
-    const next: DialogProject = {
-      ...proj,
-      dialogs: [
-        { ...d0, nodes: [...d0.nodes, { id, text: "Новая реплика", choices: [] }] },
-        ...proj.dialogs.slice(1)
-      ]
-    }
-    setProj(validateDialogProject(next))
+    setProj(prev => {
+      const d0: DialogProject["dialogs"][number] = prev.dialogs[0] || { id: "dlg_1", nodes: [] }
+      const next: DialogProject = {
+        ...prev,
+        dialogs: [
+          { ...d0, nodes: [...d0.nodes, { id, text: "Новая реплика", choices: [] }] },
+          ...prev.dialogs.slice(1)
+        ]
+      }
+      return next
+    })
     setStatus("Добавлен узел-реплика")
   }
 
   function onConnect(c: Connection) {
     if (!c.source || !c.target) return
-    const d0 = proj.dialogs[0]
-    if (!d0) return
-    const nodes = d0.nodes.map(n => n.id===c.source
-      ? { ...n, choices: [...(n.choices || []), { text: "→", next: c.target! }] }
-      : n
-    )
-    const next: DialogProject = { ...proj, dialogs: [{ ...d0, nodes }] }
-    setProj(validateDialogProject(next))
+    setProj(prev => {
+      const d0 = prev.dialogs[0]
+      if (!d0) return prev
+      const nodes = d0.nodes.map(n => n.id===c.source
+        ? { ...n, choices: [...(n.choices || []), { text: "→", next: c.target! }] }
+        : n
+      )
+      const next: DialogProject = { ...prev, dialogs: [{ ...d0, nodes }] }
+      return next
+    })
     setStatus(`Связь: ${c.source} → ${c.target}`)
     setEdges(eds => addEdge({ source: c.source!, target: c.target!, id: `${c.source}->${c.target}` }, eds))
   }
