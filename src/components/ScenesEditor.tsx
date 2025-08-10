@@ -7,9 +7,8 @@ import { drawHotspot, hitTestHotspot, translateHotspot, moveVertexTo, setCircleR
 import LayerPanel from "./LayerPanel"
 import LayerInspector from "./LayerInspector"
 import CanvasView from "./CanvasView"
-
-type Action = NonNullable<Hotspot['action']>
-type ActionType = Action['type']
+import HotspotInspector from "./HotspotInspector"
+import { HotspotContext } from "./HotspotContext"
 
 export default function ScenesEditor() {
   const [proj, setProj] = useState<SceneProject>(emptyProject())
@@ -468,81 +467,9 @@ export default function ScenesEditor() {
                     ))}
                   </div>
                 )}
-                <div style={{ marginTop:8 }}>
-                  <label>Tooltip
-                    <input value={activeHotspot.tooltip||""} onChange={e=>updateHotspot(selectedHs!, { ...activeHotspot, tooltip:e.target.value })} />
-                  </label>
-                </div>
-                <div style={{ marginTop:8 }}>
-                  <label>Action
-                    <select value={activeHotspot.action?.type||""} onChange={e=>{
-                      const type = e.target.value as ActionType
-                      let action: Hotspot['action'] = undefined
-                      switch (type) {
-                        case "go_scene":
-                          action = { type, scene_id: activeSceneId! }
-                          break
-                        case "jump_label":
-                          action = { type, label: "" }
-                          break
-                        case "call_label":
-                          action = { type, label: "" }
-                          break
-                        case "call_screen":
-                          action = { type, screen: "" }
-                          break
-                        case "function":
-                          action = { type, name: "" }
-                          break
-                        default:
-                          action = undefined
-                      }
-                      updateHotspot(selectedHs!, { ...activeHotspot, action })
-                    }}>
-                      <option value="">none</option>
-                      <option value="go_scene">go_scene</option>
-                      <option value="jump_label">jump_label</option>
-                      <option value="call_label">call_label</option>
-                      <option value="call_screen">call_screen</option>
-                      <option value="function">function</option>
-                    </select>
-                  </label>
-                  {activeHotspot.action?.type === "go_scene" && (
-                    <input value={activeHotspot.action.scene_id} onChange={e=>{
-                      if (activeHotspot.action?.type !== "go_scene") return
-                      const action = { ...activeHotspot.action, scene_id: e.target.value }
-                      updateHotspot(selectedHs!, { ...activeHotspot, action })
-                    }} />
-                  )}
-                  {activeHotspot.action?.type === "jump_label" && (
-                    <input value={activeHotspot.action.label} onChange={e=>{
-                      if (activeHotspot.action?.type !== "jump_label") return
-                      const action = { ...activeHotspot.action, label: e.target.value }
-                      updateHotspot(selectedHs!, { ...activeHotspot, action })
-                    }} />
-                  )}
-                  {activeHotspot.action?.type === "call_label" && (
-                    <input value={activeHotspot.action.label} onChange={e=>{
-                      if (activeHotspot.action?.type !== "call_label") return
-                      const action = { ...activeHotspot.action, label: e.target.value }
-                      updateHotspot(selectedHs!, { ...activeHotspot, action })
-                    }} />
-                  )}
-                  {activeHotspot.action?.type === "call_screen" && (
-                    <input value={activeHotspot.action.screen} onChange={e=>{
-                      if (activeHotspot.action?.type !== "call_screen") return
-                      const action = { ...activeHotspot.action, screen: e.target.value }
-                      updateHotspot(selectedHs!, { ...activeHotspot, action })
-                    }} />
-                  )}
-                  {activeHotspot.action?.type === "function" && (
-                    <input value={activeHotspot.action.name} onChange={e=>{
-                      if (activeHotspot.action?.type !== "function") return
-                      const action = { ...activeHotspot.action, name: e.target.value }
-                      updateHotspot(selectedHs!, { ...activeHotspot, action })
-                    }} />
-                  )}
-                </div>
+                <HotspotContext.Provider value={{ hotspot: activeHotspot, setHotspot: hs => updateHotspot(selectedHs!, hs) }}>
+                  <HotspotInspector />
+                </HotspotContext.Provider>
               </div>
             )}
           </>

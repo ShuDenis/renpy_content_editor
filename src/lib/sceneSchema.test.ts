@@ -25,4 +25,17 @@ describe('sceneSchema', () => {
   it('rejects invalid data', () => {
     expect(() => validateSceneProject({ project: {} })).toThrow()
   })
+
+  it('rejects hotspot with invalid expressions', () => {
+    const proj = {
+      version: '1.0',
+      project: { reference_resolution: { width: 100, height: 50 }, coords_mode: 'relative' as const },
+      scenes: [{
+        id: 's1',
+        layers: [],
+        hotspots: [{ id: 'h1', shape: 'rect', rect: { x: 0, y: 0, w: 1, h: 1 }, visible_if: '(', hidden: false }],
+      }],
+    }
+    expect(() => validateSceneProject(proj)).toThrow()
+  })
 })
