@@ -1,8 +1,15 @@
-import React, { useEffect, useMemo, useRef, useState } from "react"
+import React, { useEffect, useMemo, useRef, useState, forwardRef, useImperativeHandle } from "react"
 import { SceneProject, emptyProject, validateSceneProject } from "@lib/sceneSchema"
 import { loadFileAsText, saveTextFile } from "@lib/utils"
 
-export default function ScenesEditor() {
+export interface ScenesEditorHandle {
+  importJson: () => void
+  exportJson: () => void
+  save: () => void
+  load: () => void
+}
+
+const ScenesEditor = forwardRef<ScenesEditorHandle>((props, ref) => {
   const [proj, setProj] = useState<SceneProject>(emptyProject())
   const [status, setStatus] = useState<string>("")
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -81,6 +88,34 @@ export default function ScenesEditor() {
     setStatus("Экспортировано scenes.json")
   }
 
+  function onSave() {
+    localStorage.setItem("scenesProject", JSON.stringify(proj))
+    setStatus("Проект сохранён в браузере")
+  }
+
+  function onLoad() {
+    const text = localStorage.getItem("scenesProject")
+    if (!text) {
+      setStatus("Нет сохранённого проекта")
+      return
+    }
+    try {
+      const parsed = validateSceneProject(JSON.parse(text))
+      setProj(parsed)
+      setActiveSceneId(parsed.scenes[0]?.id)
+      setStatus("Проект загружен из браузера")
+    } catch (e:any) {
+      setStatus("Ошибка загрузки: " + e.message)
+    }
+  }
+
+  useImperativeHandle(ref, () => ({
+    importJson: onImportClicked,
+    exportJson: onExportClicked,
+    save: onSave,
+    load: onLoad,
+  }))
+
   function addRectHotspot() {
     const scene = proj.scenes.find(s => s.id === activeSceneId)
     if (!scene) return
@@ -105,10 +140,6 @@ export default function ScenesEditor() {
     <div style={{ display:"grid", gridTemplateColumns: "280px 1fr", width:"100%" }}>
       <aside style={{ borderRight: "1px solid #eee", padding: 12 }}>
         <div style={{ display:"flex", gap:8, marginBottom: 8 }}>
-          <button onClick={onImportClicked}>Импорт JSON</button>
-          <button onClick={onExportClicked}>Экспорт JSON</button>
-        </div>
-        <div style={{ display:"flex", gap:8, marginBottom: 8 }}>
           <button onClick={addRectHotspot}>+ Rect Hotspot</button>
         </div>
         <strong>Сцены</strong>
@@ -120,4 +151,6 @@ export default function ScenesEditor() {
       </section>
     </div>
   )
-}
+})
+
+export default ScenesEditor
