@@ -46,13 +46,17 @@ describe('hit testing and transformations', () => {
   it('detects hits for shapes', () => {
     const rect: Hotspot = { id:'r', hidden:false, shape:'rect', rect:{x:0,y:0,w:0.2,h:0.2} }
     expect(hitTestHotspot(proj, rect, 100,100,10,10)?.kind).toBe('move')
+    expect(hitTestHotspot(proj, rect, 100,100,90,90)).toBeNull()
 
     const poly: Hotspot = { id:'p', hidden:false, shape:'polygon', points:[[0,0],[0.2,0],[0,0.2]] }
     expect(hitTestHotspot(proj, poly, 100,100,0,0)).toEqual({ kind:'vertex', index:0 })
+    expect(hitTestHotspot(proj, poly, 100,100,5,5)).toEqual({ kind:'move' })
+    expect(hitTestHotspot(proj, poly, 100,100,50,50)).toBeNull()
 
     const circle: Hotspot = { id:'c', hidden:false, shape:'circle', circle:{cx:0.5, cy:0.5, r:0.1} }
     expect(hitTestHotspot(proj, circle, 100,100,60,50)?.kind).toBe('radius')
     expect(hitTestHotspot(proj, circle, 100,100,50,50)?.kind).toBe('move')
+    expect(hitTestHotspot(proj, circle, 100,100,80,80)).toBeNull()
   })
 
   it('translates hotspots', () => {
