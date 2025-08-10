@@ -161,7 +161,7 @@ export default function ScenesEditor() {
       if (hit) {
         setSelectedHs(i)
         if (hit.kind === "add") {
-          const hsCopy: Hotspot = JSON.parse(JSON.stringify(hs))
+          const hsCopy: Hotspot = structuredClone(hs)
           insertVertex(hsCopy, proj, hit.index, x, y, W, H)
           const hotspots = scene.hotspots!.map((h,j)=> j===i?hsCopy:h)
           const next = { ...proj, scenes: proj.scenes.map(s => s.id===scene.id? {...s, hotspots}: s) }
@@ -192,7 +192,7 @@ export default function ScenesEditor() {
     const W = canvas.width, H = canvas.height
     const scene = proj.scenes[sceneIndex]
     const hs = scene.hotspots![drag.hsIndex]
-    const hsCopy: Hotspot = JSON.parse(JSON.stringify(hs))
+    const hsCopy: Hotspot = structuredClone(hs)
     if (drag.mode === "move") {
       translateHotspot(hsCopy, proj, x - drag.prevX, y - drag.prevY, W, H)
     } else if (drag.mode === "vertex" && drag.vertexIndex !== undefined) {
