@@ -1,5 +1,5 @@
-import { SceneProject, validateSceneProject } from "./sceneSchema";
-import { loadFileAsText, saveTextFile } from "./utils";
+import { SceneProject, validateSceneProject } from './sceneSchema';
+import { loadFileAsText, saveTextFile } from './io';
 
 export const SCHEMA_VERSION = 1;
 
@@ -11,24 +11,28 @@ export function parseSceneProject(data: any): SceneProject {
 }
 
 export async function importSceneProjectFromFile(): Promise<SceneProject | null> {
-  const text = await loadFileAsText(".json");
+  const text = await loadFileAsText('.json');
   if (!text) return null;
   const raw = JSON.parse(text);
   return parseSceneProject(raw);
 }
 
 export function exportSceneProjectToFile(proj: SceneProject) {
-  const out = JSON.stringify({ schema_version: SCHEMA_VERSION, project: proj }, null, 2);
-  saveTextFile(out, "scenes.json");
+  const out = JSON.stringify(
+    { schema_version: SCHEMA_VERSION, project: proj },
+    null,
+    2,
+  );
+  saveTextFile(out, 'scenes.json');
 }
 
 export function saveProjectToStorage(proj: SceneProject) {
   const out = { schema_version: SCHEMA_VERSION, project: proj };
-  localStorage.setItem("scenesProject", JSON.stringify(out));
+  localStorage.setItem('scenesProject', JSON.stringify(out));
 }
 
 export function loadProjectFromStorage(): SceneProject | null {
-  const text = localStorage.getItem("scenesProject");
+  const text = localStorage.getItem('scenesProject');
   if (!text) return null;
   try {
     const raw = JSON.parse(text);

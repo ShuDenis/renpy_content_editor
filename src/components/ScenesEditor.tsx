@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Layer, type Point, type Hotspot } from "@core/sceneSchema";
-import { useSceneStore } from "../store";
-import { round3, convertProjectCoordsMode } from "@core/utils";
-import { fetchScenes, saveScene } from "../services/api";
-import HotspotPanel from "./HotspotPanel";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Layer, type Point, type Hotspot } from '@core/sceneSchema';
+import { useSceneStore } from '../store';
+import { round3, convertProjectCoordsMode } from '@core/geometry';
+import { fetchScenes, saveScene } from '../services/api';
+import HotspotPanel from './HotspotPanel';
 import {
   drawHotspot,
   hitTestHotspot,
@@ -11,12 +11,12 @@ import {
   moveVertexTo,
   setCircleRadius,
   insertVertex,
-} from "./HotspotShape";
-import LayerPanel from "./LayerPanel";
-import LayerInspector from "./LayerInspector";
-import CanvasView from "./CanvasView";
-import HotspotInspector from "./HotspotInspector";
-import { HotspotContext } from "./HotspotContext";
+} from './HotspotShape';
+import LayerPanel from './LayerPanel';
+import LayerInspector from './LayerInspector';
+import CanvasView from './CanvasView';
+import HotspotInspector from './HotspotInspector';
+import { HotspotContext } from './HotspotContext';
 
 export default function ScenesEditor() {
   const proj = useSceneStore((s) => s.proj);
@@ -24,14 +24,14 @@ export default function ScenesEditor() {
   const resetProj = useSceneStore((s) => s.resetProj);
   const undo = useSceneStore((s) => s.undo);
   const redo = useSceneStore((s) => s.redo);
-  const [status, setStatus] = useState<string>("");
+  const [status, setStatus] = useState<string>('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [activeSceneId, setActiveSceneId] = useState<string | undefined>(
     undefined,
   );
   const [drag, setDrag] = useState<{
     hsIndex: number;
-    mode: "move" | "vertex" | "radius";
+    mode: 'move' | 'vertex' | 'radius';
     vertexIndex?: number;
     prevX: number;
     prevY: number;
@@ -47,11 +47,11 @@ export default function ScenesEditor() {
   }>({ width: 0, height: 0 });
 
   const resolutions = [
-    { label: "640x480", width: 640, height: 480 },
-    { label: "800x600", width: 800, height: 600 },
-    { label: "1024x768", width: 1024, height: 768 },
-    { label: "1280x720", width: 1280, height: 720 },
-    { label: "1920x1080", width: 1920, height: 1080 },
+    { label: '640x480', width: 640, height: 480 },
+    { label: '800x600', width: 800, height: 600 },
+    { label: '1024x768', width: 1024, height: 768 },
+    { label: '1280x720', width: 1280, height: 720 },
+    { label: '1920x1080', width: 1920, height: 1080 },
   ];
 
   // load scenes from API on first run
@@ -60,10 +60,10 @@ export default function ScenesEditor() {
       .then((parsed) => {
         resetProj(parsed);
         setActiveSceneId(parsed.scenes[0]?.id);
-        setStatus("Сцены загружены");
+        setStatus('Сцены загружены');
       })
       .catch((e: any) => {
-        setStatus("Ошибка загрузки: " + e.message);
+        setStatus('Ошибка загрузки: ' + e.message);
       });
   }, [resetProj]);
 
@@ -76,22 +76,22 @@ export default function ScenesEditor() {
     const handler = (e: KeyboardEvent) => {
       if (
         (e.ctrlKey || e.metaKey) &&
-        e.key.toLowerCase() === "z" &&
+        e.key.toLowerCase() === 'z' &&
         !e.shiftKey
       ) {
         e.preventDefault();
         undo();
       } else if (
         (e.ctrlKey || e.metaKey) &&
-        (e.key.toLowerCase() === "y" ||
-          (e.shiftKey && e.key.toLowerCase() === "z"))
+        (e.key.toLowerCase() === 'y' ||
+          (e.shiftKey && e.key.toLowerCase() === 'z'))
       ) {
         e.preventDefault();
         redo();
       }
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, [undo, redo]);
 
   useEffect(() => {
@@ -102,13 +102,13 @@ export default function ScenesEditor() {
     canvas.width = rect.width;
     canvas.height = rect.height;
     setCanvasSize({ width: canvas.width, height: canvas.height });
-    const ctx = canvas.getContext("2d")!;
+    const ctx = canvas.getContext('2d')!;
     const W = canvas.width,
       H = canvas.height;
     ctx.clearRect(0, 0, W, H);
     // grid
     ctx.globalAlpha = 1;
-    ctx.strokeStyle = "#e9e9e9";
+    ctx.strokeStyle = '#e9e9e9';
     for (let x = 0; x < W; x += 40) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
@@ -123,7 +123,7 @@ export default function ScenesEditor() {
     }
 
     // border of scene
-    ctx.strokeStyle = "#bbb";
+    ctx.strokeStyle = '#bbb';
     ctx.lineWidth = 1;
     ctx.strokeRect(0.5, 0.5, W - 1, H - 1);
 
@@ -136,22 +136,22 @@ export default function ScenesEditor() {
   async function onSaveClicked() {
     try {
       await saveScene(proj);
-      setStatus("Сцены сохранены");
+      setStatus('Сцены сохранены');
     } catch (e: any) {
-      setStatus("Ошибка сохранения: " + e.message);
+      setStatus('Ошибка сохранения: ' + e.message);
     }
   }
 
   function addImageLayer() {
     const scene = proj.scenes.find((s) => s.id === activeSceneId);
     if (!scene) return;
-    const id = "layer_" + Math.random().toString(36).slice(2, 8);
+    const id = 'layer_' + Math.random().toString(36).slice(2, 8);
     const layers = [
       ...scene.layers,
       {
         id,
-        type: "image" as const,
-        image: "",
+        type: 'image' as const,
+        image: '',
         alpha: 1,
         zorder: scene.layers.length,
       },
@@ -169,13 +169,13 @@ export default function ScenesEditor() {
   function addColorLayer() {
     const scene = proj.scenes.find((s) => s.id === activeSceneId);
     if (!scene) return;
-    const id = "layer_" + Math.random().toString(36).slice(2, 8);
+    const id = 'layer_' + Math.random().toString(36).slice(2, 8);
     const layers = [
       ...scene.layers,
       {
         id,
-        type: "color" as const,
-        color: "#000000",
+        type: 'color' as const,
+        color: '#000000',
         alpha: 1,
         zorder: scene.layers.length,
       },
@@ -228,7 +228,7 @@ export default function ScenesEditor() {
     if (!scene) return;
     const layer = scene.layers.find((l) => l.id === id);
     if (!layer) return;
-    const newId = id + "_copy";
+    const newId = id + '_copy';
     const copy: Layer = { ...layer, id: newId };
     const layers = [...scene.layers, { ...copy, zorder: scene.layers.length }];
     const next = {
@@ -244,12 +244,12 @@ export default function ScenesEditor() {
   function addDroppedImage(src: string) {
     const scene = proj.scenes.find((s) => s.id === activeSceneId);
     if (!scene) return;
-    const id = "layer_" + Math.random().toString(36).slice(2, 8);
+    const id = 'layer_' + Math.random().toString(36).slice(2, 8);
     const layers = [
       ...scene.layers,
       {
         id,
-        type: "image" as const,
+        type: 'image' as const,
         image: src,
         alpha: 1,
         zorder: scene.layers.length,
@@ -285,13 +285,13 @@ export default function ScenesEditor() {
   function addRectHotspot() {
     const scene = proj.scenes.find((s) => s.id === activeSceneId);
     if (!scene) return;
-    const id = "hs_" + Math.random().toString(36).slice(2, 8);
+    const id = 'hs_' + Math.random().toString(36).slice(2, 8);
     const hs: Hotspot = {
       id,
-      shape: "rect",
+      shape: 'rect',
       rect: { x: 0.1, y: 0.1, w: 0.2, h: 0.12 },
-      tooltip: "Новый хотспот",
-      action: { type: "go_scene", scene_id: scene.id },
+      tooltip: 'Новый хотспот',
+      action: { type: 'go_scene', scene_id: scene.id },
       hidden: false,
     };
     const next = {
@@ -301,13 +301,13 @@ export default function ScenesEditor() {
       ),
     };
     setProj(next);
-    setStatus("Добавлен прямоугольный хотспот");
+    setStatus('Добавлен прямоугольный хотспот');
   }
 
   function addPolygonHotspot() {
     const scene = proj.scenes.find((s) => s.id === activeSceneId);
     if (!scene) return;
-    const id = "hs_" + Math.random().toString(36).slice(2, 8);
+    const id = 'hs_' + Math.random().toString(36).slice(2, 8);
     const points: Point[] = [
       [0.1, 0.1],
       [0.2, 0.1],
@@ -315,10 +315,10 @@ export default function ScenesEditor() {
     ];
     const hs: Hotspot = {
       id,
-      shape: "polygon",
+      shape: 'polygon',
       points,
-      tooltip: "Новый полигон",
-      action: { type: "go_scene", scene_id: scene.id },
+      tooltip: 'Новый полигон',
+      action: { type: 'go_scene', scene_id: scene.id },
       hidden: false,
     };
     const next = {
@@ -328,20 +328,20 @@ export default function ScenesEditor() {
       ),
     };
     setProj(next);
-    setStatus("Добавлен полигональный хотспот");
+    setStatus('Добавлен полигональный хотспот');
   }
 
   function addCircleHotspot() {
     const scene = proj.scenes.find((s) => s.id === activeSceneId);
     if (!scene) return;
-    const id = "hs_" + Math.random().toString(36).slice(2, 8);
+    const id = 'hs_' + Math.random().toString(36).slice(2, 8);
     const circle = { cx: 0.3, cy: 0.3, r: 0.1 };
     const hs: Hotspot = {
       id,
-      shape: "circle",
+      shape: 'circle',
       circle,
-      tooltip: "Новый круг",
-      action: { type: "go_scene", scene_id: scene.id },
+      tooltip: 'Новый круг',
+      action: { type: 'go_scene', scene_id: scene.id },
       hidden: false,
     };
     const next = {
@@ -351,7 +351,7 @@ export default function ScenesEditor() {
       ),
     };
     setProj(next);
-    setStatus("Добавлен круглый хотспот");
+    setStatus('Добавлен круглый хотспот');
   }
 
   const sceneList = useMemo(
@@ -408,7 +408,7 @@ export default function ScenesEditor() {
       const hit = hitTestHotspot(proj, hs, W, H, x, y);
       if (hit) {
         setSelectedHs(i);
-        if (hit.kind === "add") {
+        if (hit.kind === 'add') {
           const hsCopy: Hotspot = structuredClone(hs);
           insertVertex(hsCopy, proj, hit.index, x, y, W, H);
           const hotspots = scene.hotspots!.map((h, j) =>
@@ -423,23 +423,23 @@ export default function ScenesEditor() {
           setProj(next);
           setDrag({
             hsIndex: i,
-            mode: "vertex",
+            mode: 'vertex',
             vertexIndex: hit.index + 1,
             prevX: x,
             prevY: y,
           });
-        } else if (hit.kind === "vertex") {
+        } else if (hit.kind === 'vertex') {
           setDrag({
             hsIndex: i,
-            mode: "vertex",
+            mode: 'vertex',
             vertexIndex: hit.index,
             prevX: x,
             prevY: y,
           });
-        } else if (hit.kind === "radius") {
-          setDrag({ hsIndex: i, mode: "radius", prevX: x, prevY: y });
-        } else if (hit.kind === "move") {
-          setDrag({ hsIndex: i, mode: "move", prevX: x, prevY: y });
+        } else if (hit.kind === 'radius') {
+          setDrag({ hsIndex: i, mode: 'radius', prevX: x, prevY: y });
+        } else if (hit.kind === 'move') {
+          setDrag({ hsIndex: i, mode: 'move', prevX: x, prevY: y });
         }
         break;
       }
@@ -461,11 +461,11 @@ export default function ScenesEditor() {
     const scene = proj.scenes[sceneIndex];
     const hs = scene.hotspots![drag.hsIndex];
     const hsCopy: Hotspot = structuredClone(hs);
-    if (drag.mode === "move") {
+    if (drag.mode === 'move') {
       translateHotspot(hsCopy, proj, x - drag.prevX, y - drag.prevY, W, H);
-    } else if (drag.mode === "vertex" && drag.vertexIndex !== undefined) {
+    } else if (drag.mode === 'vertex' && drag.vertexIndex !== undefined) {
       moveVertexTo(hsCopy, proj, drag.vertexIndex, x, y, W, H);
-    } else if (drag.mode === "radius") {
+    } else if (drag.mode === 'radius') {
       setCircleRadius(hsCopy, proj, x, y, W, H);
     }
     const hotspots = scene.hotspots!.map((h, j) =>
@@ -519,33 +519,33 @@ export default function ScenesEditor() {
   return (
     <div
       style={{
-        display: "grid",
-        gridTemplateColumns: "280px 1fr 300px",
-        width: "100%",
-        position: "relative",
+        display: 'grid',
+        gridTemplateColumns: '280px 1fr 300px',
+        width: '100%',
+        position: 'relative',
       }}
     >
       <div
         style={{
-          position: "absolute",
+          position: 'absolute',
           bottom: 8,
           left: 8,
         }}
       >
         <button onClick={onSaveClicked}>Сохранить</button>
       </div>
-      <aside style={{ borderRight: "1px solid #eee", padding: 12 }}>
+      <aside style={{ borderRight: '1px solid #eee', padding: 12 }}>
         <div
           style={{
-            display: "flex",
+            display: 'flex',
             gap: 8,
-            flexWrap: "wrap",
+            flexWrap: 'wrap',
             marginBottom: 8,
-            alignItems: "center",
+            alignItems: 'center',
           }}
         >
           <button onClick={openPreview}>Превью</button>
-          <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <input
               type="checkbox"
               checked={useWebGL}
@@ -557,12 +557,12 @@ export default function ScenesEditor() {
         <div style={{ marginBottom: 8 }}>
           <strong>Экран</strong>
           {!manualRes ? (
-            <div style={{ display: "flex", gap: 4 }}>
+            <div style={{ display: 'flex', gap: 4 }}>
               <select
                 value={`${proj.project.reference_resolution.width}x${proj.project.reference_resolution.height}`}
                 onChange={(e) => {
                   const [w, h] = e.target.value
-                    .split("x")
+                    .split('x')
                     .map((n) => parseInt(n));
                   const next = {
                     ...proj,
@@ -583,7 +583,7 @@ export default function ScenesEditor() {
               <button onClick={() => setManualRes(true)}>Manual</button>
             </div>
           ) : (
-            <div style={{ display: "flex", gap: 4 }}>
+            <div style={{ display: 'flex', gap: 4 }}>
               <input
                 type="number"
                 value={proj.project.reference_resolution.width}
@@ -623,12 +623,12 @@ export default function ScenesEditor() {
               <button onClick={() => setManualRes(false)}>Presets</button>
             </div>
           )}
-          <label style={{ display: "block", marginTop: 4 }}>
+          <label style={{ display: 'block', marginTop: 4 }}>
             Mode
             <select
               value={proj.project.coords_mode}
               onChange={(e) => {
-                const mode = e.target.value as "relative" | "absolute";
+                const mode = e.target.value as 'relative' | 'absolute';
                 const converted = convertProjectCoordsMode(proj, mode);
                 setProj(converted);
               }}
@@ -644,27 +644,27 @@ export default function ScenesEditor() {
           onAddCircle={addCircleHotspot}
         />
         <strong>Сцены</strong>
-        <ul style={{ listStyle: "none", padding: 0 }}>{sceneList}</ul>
+        <ul style={{ listStyle: 'none', padding: 0 }}>{sceneList}</ul>
         <div style={{ marginTop: 12, fontSize: 12, opacity: 0.8 }}>
           {status}
         </div>
       </aside>
       <section
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
         <div
           style={{
-            width: "100%",
-            height: "100%",
-            maxWidth: "calc(100vw - 580px)",
-            aspectRatio: "16/9",
-            position: "relative",
-            border: "1px solid #ddd",
-            background: "#fff",
+            width: '100%',
+            height: '100%',
+            maxWidth: 'calc(100vw - 580px)',
+            aspectRatio: '16/9',
+            position: 'relative',
+            border: '1px solid #ddd',
+            background: '#fff',
           }}
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
@@ -672,15 +672,15 @@ export default function ScenesEditor() {
             const files = e.dataTransfer.files;
             for (const file of Array.from(files)) {
               if (
-                ["image/png", "image/jpeg", "image/webp"].includes(file.type)
+                ['image/png', 'image/jpeg', 'image/webp'].includes(file.type)
               ) {
                 const url = URL.createObjectURL(file);
                 addDroppedImage(url);
               }
             }
             const uri =
-              e.dataTransfer.getData("text/uri-list") ||
-              e.dataTransfer.getData("text/plain");
+              e.dataTransfer.getData('text/uri-list') ||
+              e.dataTransfer.getData('text/plain');
             if (uri && uri.match(/\.(png|jpe?g|webp)$/i))
               addDroppedImage(uri.trim());
           }}
@@ -699,17 +699,17 @@ export default function ScenesEditor() {
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             style={{
-              position: "absolute",
+              position: 'absolute',
               top: 0,
               left: 0,
-              width: "100%",
-              height: "100%",
+              width: '100%',
+              height: '100%',
             }}
           />
         </div>
       </section>
       <aside
-        style={{ borderLeft: "1px solid #eee", padding: 12, overflowY: "auto" }}
+        style={{ borderLeft: '1px solid #eee', padding: 12, overflowY: 'auto' }}
       >
         {activeScene && (
           <>
@@ -728,13 +728,13 @@ export default function ScenesEditor() {
               layer={activeLayer}
               onChange={(l) => updateLayer(l.id, l)}
             />
-            <strong style={{ marginTop: 8, display: "block" }}>
+            <strong style={{ marginTop: 8, display: 'block' }}>
               Параметры сцены
             </strong>
             <div
               style={{
-                display: "flex",
-                flexDirection: "column",
+                display: 'flex',
+                flexDirection: 'column',
                 gap: 4,
                 marginBottom: 8,
               }}
@@ -742,20 +742,20 @@ export default function ScenesEditor() {
               <label>
                 Название
                 <input
-                  value={activeScene.name || ""}
+                  value={activeScene.name || ''}
                   onChange={(e) => handleSceneNameChange(e.target.value)}
                 />
               </label>
             </div>
             <strong>Элементы</strong>
-            <ul style={{ listStyle: "none", padding: 0 }}>
+            <ul style={{ listStyle: 'none', padding: 0 }}>
               {activeScene.hotspots?.map((hs, i) => (
                 <li
                   key={hs.id}
-                  style={{ display: "flex", alignItems: "center", gap: 4 }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 4 }}
                 >
                   <button onClick={() => toggleHotspotVisibility(i)}>
-                    {hs.hidden ? "🙈" : "👁️"}
+                    {hs.hidden ? '🙈' : '👁️'}
                   </button>
                   <button
                     onClick={() => setSelectedHs(i)}
@@ -769,11 +769,11 @@ export default function ScenesEditor() {
             {activeHotspot && (
               <div style={{ marginTop: 8 }}>
                 <strong>Свойства</strong>
-                {activeHotspot.shape === "rect" && activeHotspot.rect && (
+                {activeHotspot.shape === 'rect' && activeHotspot.rect && (
                   <div
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
                       gap: 4,
                     }}
                   >
@@ -847,11 +847,11 @@ export default function ScenesEditor() {
                     </label>
                   </div>
                 )}
-                {activeHotspot.shape === "circle" && activeHotspot.circle && (
+                {activeHotspot.shape === 'circle' && activeHotspot.circle && (
                   <div
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
                       gap: 4,
                     }}
                   >
@@ -908,9 +908,9 @@ export default function ScenesEditor() {
                     </label>
                   </div>
                 )}
-                {activeHotspot.shape === "polygon" && activeHotspot.points && (
+                {activeHotspot.shape === 'polygon' && activeHotspot.points && (
                   <div
-                    style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                    style={{ display: 'flex', flexDirection: 'column', gap: 4 }}
                   >
                     <label>
                       Количество точек
@@ -941,8 +941,8 @@ export default function ScenesEditor() {
                       <div
                         key={i}
                         style={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr",
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 1fr',
                           gap: 4,
                         }}
                       >
