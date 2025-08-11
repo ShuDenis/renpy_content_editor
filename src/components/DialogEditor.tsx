@@ -107,7 +107,7 @@ function Graph() {
 
   return (
     <div style={{ display:"grid", gridTemplateColumns: "240px 1fr", width:"100%", position:"relative" }}>
-      <div style={{ position:"absolute", top:8, right:8, display:"flex", gap:8 }}>
+      <div style={{ position:"absolute", bottom:8, left:8, display:"flex", gap:8 }}>
         <button onClick={importJson}>Импорт JSON</button>
         <button onClick={exportJson}>Экспорт JSON</button>
       </div>
