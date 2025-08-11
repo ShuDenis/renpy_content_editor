@@ -1,5 +1,5 @@
 import express from 'express';
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import swaggerUi from 'swagger-ui-express';
@@ -17,60 +17,62 @@ const dataDir = path.join(__dirname, 'data');
 const scenesPath = path.join(dataDir, 'scenes.json');
 const dialogsPath = path.join(dataDir, 'dialogs.json');
 
-function readData(filePath, key) {
-  if (!fs.existsSync(filePath)) {
+async function readData(filePath, key) {
+  try {
+    const content = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(content);
+  } catch {
     const initial = { schema_version: 1 };
     initial[key] = [];
-    fs.writeFileSync(filePath, JSON.stringify(initial, null, 2));
+    await fs.writeFile(filePath, JSON.stringify(initial, null, 2));
     return initial;
   }
-  return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 }
 
-function writeData(filePath, data) {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+async function writeData(filePath, data) {
+  await fs.writeFile(filePath, JSON.stringify(data, null, 2));
 }
 
-app.get('/scenes', (req, res) => {
-  const data = readData(scenesPath, 'scenes');
+app.get('/scenes', async (req, res) => {
+  const data = await readData(scenesPath, 'scenes');
   res.json(data);
 });
 
-app.post('/scenes', (req, res) => {
-  const data = readData(scenesPath, 'scenes');
+app.post('/scenes', async (req, res) => {
   try {
+    const data = await readData(scenesPath, 'scenes');
     const newScene = SceneSchema.parse(req.body);
     data.scenes.push(newScene);
     data.schema_version++;
-    writeData(scenesPath, data);
+    await writeData(scenesPath, data);
     res.status(201).json(newScene);
   } catch (err) {
     if (err instanceof ZodError) {
       res.status(400).json({ errors: err.errors });
     } else {
-      res.status(500).json({ error: 'Internal Server Error' });
+      res.status(500).json({ error: err.message });
     }
   }
 });
 
-app.get('/dialogs', (req, res) => {
-  const data = readData(dialogsPath, 'dialogs');
+app.get('/dialogs', async (req, res) => {
+  const data = await readData(dialogsPath, 'dialogs');
   res.json(data);
 });
 
-app.post('/dialogs', (req, res) => {
-  const data = readData(dialogsPath, 'dialogs');
+app.post('/dialogs', async (req, res) => {
   try {
+    const data = await readData(dialogsPath, 'dialogs');
     const newDialog = DialogSchema.parse(req.body);
     data.dialogs.push(newDialog);
     data.schema_version++;
-    writeData(dialogsPath, data);
+    await writeData(dialogsPath, data);
     res.status(201).json(newDialog);
   } catch (err) {
     if (err instanceof ZodError) {
       res.status(400).json({ errors: err.errors });
     } else {
-      res.status(500).json({ error: 'Internal Server Error' });
+      res.status(500).json({ error: err.message });
     }
   }
 });
