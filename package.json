@@ -9,7 +9,11 @@
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty",
     "lint": "echo \"(add eslint if needed)\"",
-    "test": "vitest run"
+    "test": "vitest run",
+    "generate": "node cli/generate.mjs"
+  },
+  "bin": {
+    "rpy-gen": "cli/generate.mjs"
   },
   "dependencies": {
     "react": "^18.2.0",
