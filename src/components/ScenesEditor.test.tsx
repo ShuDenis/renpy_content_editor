@@ -12,15 +12,15 @@ import { useSceneStore } from "../store";
 import { emptyProject } from "@core/sceneSchema";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ЧАСТЬ 1: тест клонирования хотспота (structuredClone)
-// (без импорта типов из @core/sceneSchema, чтобы не ломать сборку)
+// PART 1: hotspot cloning test (structuredClone)
+// (no type imports from @core/sceneSchema to avoid breaking the build)
 // ─────────────────────────────────────────────────────────────────────────────
 type THotspot = {
   id: string;
   shape: "rect" | "polygon" | "circle";
   rect?: { x: number; y: number; w: number; h: number };
   tooltip?: string | undefined;
-  // допускаем любые доп. поля
+  // allow any additional fields
   [key: string]: any;
 };
 
@@ -44,7 +44,7 @@ describe("ScenesEditor hotspot cloning", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ЧАСТЬ 2: тесты компонента ScenesEditor (загрузка, сохранение, добавление хотспота)
+// PART 2: ScenesEditor component tests (loading, saving, adding a hotspot)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const sampleProject = {
@@ -121,7 +121,7 @@ describe("ScenesEditor", () => {
   });
 
   it.skip("updates hotspot coordinates on drag (not implemented in MVP)", async () => {
-    // Отключено: текущий MVP не поддерживает drag/resize хотспотов и поля X/Y.
-    // Когда добавим drag’n’drop — вернём тест.
+    // Disabled: the current MVP doesn't support hotspot drag/resize or X/Y fields.
+    // We'll re-enable this test once drag-and-drop is added.
   });
 });

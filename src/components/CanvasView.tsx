@@ -1,11 +1,11 @@
 import React, { useRef } from 'react';
 import type { SceneProject, Hotspot, Layer } from '@core/sceneSchema';
-import { useCanvasRendering } from './useCanvasRendering';
+import useCanvasRendering from '../hooks/useCanvasRendering';
 import FullscreenCanvasOverlay from './FullscreenCanvasOverlay';
 
 type CanvasViewProps =
   | {
-      // Расширенный режим: рисуем сцену проекта + хотспоты
+      // Advanced mode: draw the project scene with hotspots
       project: SceneProject;
       sceneId: string;
       useWebGL?: boolean;
@@ -16,7 +16,7 @@ type CanvasViewProps =
       onDropImage?: (src: string) => void;
     }
   | {
-      // Простой режим: рисуем список слоёв как есть (без хотспотов)
+      // Simple mode: draw the list of layers as-is (no hotspots)
       layers: Layer[];
       width: number;
       height: number;
@@ -30,16 +30,14 @@ type CanvasViewProps =
 export default function CanvasView(props: CanvasViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Вычисляем источник слоёв/хотспотов в зависимости от режима
+  // Determine layer/hotspot source based on mode
   const project = 'project' in props ? props.project : undefined;
   const sceneId = 'sceneId' in props ? props.sceneId : undefined;
   const useWebGL = props.useWebGL;
   const onExit = props.onExit;
   const onDropImage = props.onDropImage;
 
-  const scene = project
-    ? project.scenes.find((s) => s.id === sceneId)
-    : undefined;
+  const scene = project ? project.scenes.find((s) => s.id === sceneId) : undefined;
   const layersToDraw: Layer[] = scene
     ? scene.layers
     : ('layers' in props && props.layers) || [];
@@ -79,6 +77,17 @@ export default function CanvasView(props: CanvasViewProps) {
 
   if (onExit) {
     return (
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: '#000',
+          zIndex: 1000,
+        }}
+        onClick={onExit}
+      >
+        {canvasElement}
+      </div>
       <FullscreenCanvasOverlay onExit={onExit}>
         {canvasElement}
       </FullscreenCanvasOverlay>

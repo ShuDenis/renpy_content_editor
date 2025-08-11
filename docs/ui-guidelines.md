@@ -1,5 +1,8 @@
 # UI Style Guide
 
+## Language
+- The working language of the project is English; write comments and documentation in English.
+
 ## Сетка
 - Базовая единица: 8 px.
 - Внутренние отступы, размеры элементов и расстояния кратны 8 px.
