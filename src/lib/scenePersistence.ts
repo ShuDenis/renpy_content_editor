@@ -37,3 +37,4 @@ export function loadProjectFromStorage(): SceneProject | null {
     return null;
   }
 }
+
