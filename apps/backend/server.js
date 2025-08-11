@@ -4,6 +4,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import swaggerUi from 'swagger-ui-express';
 import openapi from './openapi.json' assert { type: 'json' };
+import { ZodError } from 'zod';
+import { SceneSchema, DialogSchema } from './schemas.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,11 +38,19 @@ app.get('/scenes', (req, res) => {
 
 app.post('/scenes', (req, res) => {
   const data = readData(scenesPath, 'scenes');
-  const newScene = req.body;
-  data.scenes.push(newScene);
-  data.schema_version++;
-  writeData(scenesPath, data);
-  res.status(201).json(newScene);
+  try {
+    const newScene = SceneSchema.parse(req.body);
+    data.scenes.push(newScene);
+    data.schema_version++;
+    writeData(scenesPath, data);
+    res.status(201).json(newScene);
+  } catch (err) {
+    if (err instanceof ZodError) {
+      res.status(400).json({ errors: err.errors });
+    } else {
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
 });
 
 app.get('/dialogs', (req, res) => {
@@ -50,11 +60,19 @@ app.get('/dialogs', (req, res) => {
 
 app.post('/dialogs', (req, res) => {
   const data = readData(dialogsPath, 'dialogs');
-  const newDialog = req.body;
-  data.dialogs.push(newDialog);
-  data.schema_version++;
-  writeData(dialogsPath, data);
-  res.status(201).json(newDialog);
+  try {
+    const newDialog = DialogSchema.parse(req.body);
+    data.dialogs.push(newDialog);
+    data.schema_version++;
+    writeData(dialogsPath, data);
+    res.status(201).json(newDialog);
+  } catch (err) {
+    if (err instanceof ZodError) {
+      res.status(400).json({ errors: err.errors });
+    } else {
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
 });
 
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapi));
