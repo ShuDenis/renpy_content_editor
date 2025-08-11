@@ -11,7 +11,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --pretty",
-    "lint": "echo \"(add eslint if needed)\"",
+    "lint": "eslint . --ext .ts,.tsx,.js",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js --fix",
     "test": "vitest run",
     "format": "prettier --write .",
     "prepare": "husky"
@@ -35,7 +36,11 @@
     "@vitejs/plugin-react": "^4.3.1",
     "husky": "^9.0.0",
     "lint-staged": "^15.2.5",
-    "prettier": "^3.3.2"
+    "prettier": "^3.3.2",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "eslint-config-prettier": "^9.1.0"
   },
   "lint-staged": {
     "*.{ts,tsx,js,css,html,json,md}": "prettier --write"
