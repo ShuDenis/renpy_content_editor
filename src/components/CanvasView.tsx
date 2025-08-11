@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import type { SceneProject, Hotspot, Layer } from '@core/sceneSchema';
 import useCanvasRendering from '../hooks/useCanvasRendering';
+import FullscreenCanvasOverlay from './FullscreenCanvasOverlay';
 
 type CanvasViewProps =
   | {
@@ -87,6 +88,9 @@ export default function CanvasView(props: CanvasViewProps) {
       >
         {canvasElement}
       </div>
+      <FullscreenCanvasOverlay onExit={onExit}>
+        {canvasElement}
+      </FullscreenCanvasOverlay>
     );
   }
 

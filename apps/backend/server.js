@@ -1,65 +1,105 @@
 import express from 'express';
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import swaggerUi from 'swagger-ui-express';
 import openapi from './openapi.json' assert { type: 'json' };
+import { ZodError } from 'zod';
+import { SceneSchema, DialogSchema } from './schemas.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express();
-app.use(express.json());
+function createApp(dataDir = path.resolve(__dirname, process.env.DATA_DIR || 'data')) {
+  const app = express();
+  app.use(express.json());
 
-const dataDir = path.join(__dirname, 'data');
-const scenesPath = path.join(dataDir, 'scenes.json');
-const dialogsPath = path.join(dataDir, 'dialogs.json');
+  const scenesPath = path.join(dataDir, 'scenes.json');
+  const dialogsPath = path.join(dataDir, 'dialogs.json');
 
-function readData(filePath, key) {
-  if (!fs.existsSync(filePath)) {
-    const initial = { schema_version: 1 };
-    initial[key] = [];
-    fs.writeFileSync(filePath, JSON.stringify(initial, null, 2));
-    return initial;
+  async function readData(filePath, key) {
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    try {
+      const content = await fs.readFile(filePath, 'utf-8');
+      return JSON.parse(content);
+    } catch (err) {
+      if (err?.code === 'ENOENT') {
+        const initial = { schema_version: 1, [key]: [] };
+        await fs.writeFile(filePath, JSON.stringify(initial, null, 2));
+        return initial;
+      }
+      throw err;
+    }
   }
-  return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+
+  async function writeData(filePath, data) {
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+  }
+
+  app.get('/scenes', async (req, res) => {
+    try {
+      const data = await readData(scenesPath, 'scenes');
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/scenes', async (req, res) => {
+    try {
+      const data = await readData(scenesPath, 'scenes');
+      const newScene = SceneSchema.parse(req.body);
+      data.scenes.push(newScene);
+      data.schema_version++;
+      await writeData(scenesPath, data);
+      res.status(201).json(newScene);
+    } catch (err) {
+      if (err instanceof ZodError) {
+        res.status(400).json({ errors: err.errors });
+      } else {
+        res.status(500).json({ error: err.message });
+      }
+    }
+  });
+
+  app.get('/dialogs', async (req, res) => {
+    try {
+      const data = await readData(dialogsPath, 'dialogs');
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/dialogs', async (req, res) => {
+    try {
+      const data = await readData(dialogsPath, 'dialogs');
+      const newDialog = DialogSchema.parse(req.body);
+      data.dialogs.push(newDialog);
+      data.schema_version++;
+      await writeData(dialogsPath, data);
+      res.status(201).json(newDialog);
+    } catch (err) {
+      if (err instanceof ZodError) {
+        res.status(400).json({ errors: err.errors });
+      } else {
+        res.status(500).json({ error: err.message });
+      }
+    }
+  });
+
+  app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapi));
+
+  return app;
 }
 
-function writeData(filePath, data) {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+if (process.env.NODE_ENV !== 'test') {
+  const app = createApp();
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`Server listening on port ${port}`);
+  });
 }
 
-app.get('/scenes', (req, res) => {
-  const data = readData(scenesPath, 'scenes');
-  res.json(data);
-});
-
-app.post('/scenes', (req, res) => {
-  const data = readData(scenesPath, 'scenes');
-  const newScene = req.body;
-  data.scenes.push(newScene);
-  data.schema_version++;
-  writeData(scenesPath, data);
-  res.status(201).json(newScene);
-});
-
-app.get('/dialogs', (req, res) => {
-  const data = readData(dialogsPath, 'dialogs');
-  res.json(data);
-});
-
-app.post('/dialogs', (req, res) => {
-  const data = readData(dialogsPath, 'dialogs');
-  const newDialog = req.body;
-  data.dialogs.push(newDialog);
-  data.schema_version++;
-  writeData(dialogsPath, data);
-  res.status(201).json(newDialog);
-});
-
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapi));
-
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
-});
+export { createApp };
+export default createApp;

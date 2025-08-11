@@ -4,10 +4,15 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "vitest"
   },
   "dependencies": {
     "express": "^4.19.2",
     "swagger-ui-express": "^4.6.3"
+  },
+  "devDependencies": {
+    "supertest": "^6.3.3",
+    "vitest": "^1.6.0"
   }
 }
