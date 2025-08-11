@@ -8,6 +8,11 @@ export class ImageLRUCache {
   private totalBytes = 0;
   constructor(private readonly maxBytes: number) {}
 
+  /**
+   * Loads an image and stores it in the cache.
+   * @param src Image source URL.
+   * @returns The loaded HTMLImageElement.
+   */
   async load(src: string): Promise<HTMLImageElement> {
     const existing = this.cache.get(src);
     if (existing) {
@@ -20,6 +25,27 @@ export class ImageLRUCache {
     const size = img.naturalWidth * img.naturalHeight * 4;
     this.insert(src, { img, size });
     return img;
+  }
+
+  /**
+   * Removes a specific image from the cache.
+   * @param key Cache key (typically the image source URL).
+   * @returns Whether the image existed and was removed.
+   */
+  delete(key: string): boolean {
+    const entry = this.cache.get(key);
+    if (!entry) return false;
+    this.cache.delete(key);
+    this.totalBytes -= entry.size;
+    return true;
+  }
+
+  /**
+   * Clears all images from the cache and resets memory usage counter.
+   */
+  clear(): void {
+    this.cache.clear();
+    this.totalBytes = 0;
   }
 
   private insert(key: string, value: CachedImage) {
