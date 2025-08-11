@@ -15,7 +15,8 @@
     "lint:fix": "eslint . --ext .ts,.tsx,.js --fix",
     "test": "vitest run",
     "format": "prettier --write .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "scene-gen": "node scripts/scene-gen.js"
   },
   "dependencies": {
     "react": "^18.2.0",
