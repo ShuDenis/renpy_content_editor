@@ -5,7 +5,7 @@ import { projectToCanvasScalar, projectToCanvasPoint } from '@core/geometry';
 
 type CanvasViewProps =
   | {
-      // Расширенный режим: рисуем сцену проекта + хотспоты
+      // Advanced mode: draw the project scene with hotspots
       project: SceneProject;
       sceneId: string;
       useWebGL?: boolean;
@@ -16,7 +16,7 @@ type CanvasViewProps =
       onDropImage?: (src: string) => void;
     }
   | {
-      // Простой режим: рисуем список слоёв как есть (без хотспотов)
+      // Simple mode: draw the list of layers as-is (no hotspots)
       layers: Layer[];
       width: number;
       height: number;
@@ -79,7 +79,7 @@ function drawHotspotPreview(
 export default function CanvasView(props: CanvasViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Вычисляем источник слоёв/хотспотов в зависимости от режима
+  // Determine layer/hotspot source based on mode
   const project = 'project' in props ? props.project : undefined;
   const sceneId = 'sceneId' in props ? props.sceneId : undefined;
   const useWebGL = props.useWebGL;
@@ -98,7 +98,7 @@ export default function CanvasView(props: CanvasViewProps) {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Размеры канваса: если передали width/height — используем их, иначе растягиваем по контейнеру
+    // Canvas size: use provided width/height or stretch to container
     const W =
       'width' in props && typeof props.width === 'number'
         ? (canvas.width = props.width)
@@ -109,7 +109,7 @@ export default function CanvasView(props: CanvasViewProps) {
         : (canvas.height = canvas.clientHeight);
 
     (async () => {
-      // Предзагрузка изображений через LRU-кеш
+      // Preload images via LRU cache
       const imageLayers = layersToDraw.filter((l) => l.type === 'image');
       const loaded = await Promise.all(
         imageLayers.map(async (l) => ({
@@ -127,7 +127,7 @@ export default function CanvasView(props: CanvasViewProps) {
       }
 
       if (gl) {
-        // Пока что чистим фон вебглом, остальное рисуем 2D (позже можно заменить на текстурные квадраты)
+        // For now we clear the background with WebGL and draw the rest in 2D (could switch to textured quads later)
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.clearColor(0, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
@@ -136,7 +136,7 @@ export default function CanvasView(props: CanvasViewProps) {
         if (!ctx2d) return;
         ctx2d.clearRect(0, 0, W, H);
 
-        // Единая сортировка всех слоёв по zorder
+        // Unified sorting of all layers by z-order
         const sorted = [...layersToDraw].sort(
           (a, b) => (a.zorder ?? 0) - (b.zorder ?? 0),
         );
@@ -164,7 +164,7 @@ export default function CanvasView(props: CanvasViewProps) {
         }
         ctx2d.globalAlpha = 1;
 
-        // Хотспоты
+        // Hotspots
         if (project && scene) {
           for (const hs of hotspots) {
             if (!hs.hidden) drawHotspotPreview(ctx2d, project, hs, W, H);
@@ -176,7 +176,7 @@ export default function CanvasView(props: CanvasViewProps) {
 
         ctx.clearRect(0, 0, W, H);
 
-        // Единая сортировка всех слоёв по zorder
+        // Unified sorting of all layers by z-order
         const sorted = [...layersToDraw].sort(
           (a, b) => (a.zorder ?? 0) - (b.zorder ?? 0),
         );
@@ -205,7 +205,7 @@ export default function CanvasView(props: CanvasViewProps) {
 
         ctx.globalAlpha = 1;
 
-        // Хотспоты
+        // Hotspots
         if (project && scene) {
           for (const hs of hotspots) {
             if (!hs.hidden) drawHotspotPreview(ctx, project, hs, W, H);
@@ -223,7 +223,7 @@ export default function CanvasView(props: CanvasViewProps) {
     useWebGL,
   ]);
 
-  // Режим полноэкранного превью (если передан onExit) — кликом закрываем
+  // Fullscreen preview mode (if onExit is provided); close on click
   if (onExit) {
     return (
       <div
@@ -262,7 +262,7 @@ export default function CanvasView(props: CanvasViewProps) {
     );
   }
 
-  // Иначе — «встраиваемый» канвас (как в простом варианте)
+  // Otherwise an embedded canvas (like in the simple variant)
   return (
     <canvas
       ref={canvasRef}
