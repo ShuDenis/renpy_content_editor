@@ -4,6 +4,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import swaggerUi from 'swagger-ui-express';
 import openapi from './openapi.json' assert { type: 'json' };
+import { ZodError } from 'zod';
+import { SceneSchema, DialogSchema } from './schemas.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,9 +23,8 @@ function createApp(dataDir = path.resolve(__dirname, process.env.DATA_DIR || 'da
       const content = await fs.readFile(filePath, 'utf-8');
       return JSON.parse(content);
     } catch (err) {
-      if (err.code === 'ENOENT') {
-        const initial = { schema_version: 1 };
-        initial[key] = [];
+      if (err?.code === 'ENOENT') {
+        const initial = { schema_version: 1, [key]: [] };
         await fs.writeFile(filePath, JSON.stringify(initial, null, 2));
         return initial;
       }
@@ -47,13 +48,17 @@ function createApp(dataDir = path.resolve(__dirname, process.env.DATA_DIR || 'da
   app.post('/scenes', async (req, res) => {
     try {
       const data = await readData(scenesPath, 'scenes');
-      const newScene = req.body;
+      const newScene = SceneSchema.parse(req.body);
       data.scenes.push(newScene);
       data.schema_version++;
       await writeData(scenesPath, data);
       res.status(201).json(newScene);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+    } catch (err) {
+      if (err instanceof ZodError) {
+        res.status(400).json({ errors: err.errors });
+      } else {
+        res.status(500).json({ error: err.message });
+      }
     }
   });
 
@@ -69,13 +74,17 @@ function createApp(dataDir = path.resolve(__dirname, process.env.DATA_DIR || 'da
   app.post('/dialogs', async (req, res) => {
     try {
       const data = await readData(dialogsPath, 'dialogs');
-      const newDialog = req.body;
+      const newDialog = DialogSchema.parse(req.body);
       data.dialogs.push(newDialog);
       data.schema_version++;
       await writeData(dialogsPath, data);
       res.status(201).json(newDialog);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+    } catch (err) {
+      if (err instanceof ZodError) {
+        res.status(400).json({ errors: err.errors });
+      } else {
+        res.status(500).json({ error: err.message });
+      }
     }
   });
 

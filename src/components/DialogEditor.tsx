@@ -12,7 +12,7 @@ import ReactFlow, {
   useNodesState,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { validateDialogProject, type DialogProject } from "@core/dialogSchema";
+import { type DialogProject } from "@core/dialogSchema";
 import { useDialogStore } from "../store";
 
 interface DialogNodeData {
