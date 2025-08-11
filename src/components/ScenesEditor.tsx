@@ -219,10 +219,22 @@ export default function ScenesEditor() {
     const scene = proj.scenes.find(s => s.id === activeSceneId)
     if (!scene) return
     const id = "hs_" + Math.random().toString(36).slice(2,8)
-    const next = { ...proj, scenes: proj.scenes.map(s => s.id === scene.id
-      ? { ...s, hotspots: [...(s.hotspots ?? []), { id, shape: "rect", rect: { x: 0.1, y: 0.1, w: 0.2, h: 0.12 }, tooltip: "Новый хотспот", action: { type: "go_scene", scene_id: scene.id } }] }
-      : s
-    )}
+    const hs: Hotspot = {
+      id,
+      shape: "rect",
+      rect: { x: 0.1, y: 0.1, w: 0.2, h: 0.12 },
+      tooltip: "Новый хотспот",
+      action: { type: "go_scene", scene_id: scene.id },
+      hidden: false,
+    }
+    const next = {
+      ...proj,
+      scenes: proj.scenes.map(s =>
+        s.id === scene.id
+          ? { ...s, hotspots: [...(s.hotspots ?? []), hs] }
+          : s
+      ),
+    }
     setProj(next)
     setStatus("Добавлен прямоугольный хотспот")
   }
@@ -232,10 +244,22 @@ export default function ScenesEditor() {
     if (!scene) return
     const id = "hs_" + Math.random().toString(36).slice(2,8)
     const points: Point[] = [[0.1,0.1],[0.2,0.1],[0.15,0.2]]
-    const next = { ...proj, scenes: proj.scenes.map(s => s.id === scene.id
-      ? { ...s, hotspots: [...(s.hotspots ?? []), { id, shape: "polygon", points, tooltip: "Новый полигон", action: { type: "go_scene", scene_id: scene.id } }] }
-      : s
-    )}
+    const hs: Hotspot = {
+      id,
+      shape: "polygon",
+      points,
+      tooltip: "Новый полигон",
+      action: { type: "go_scene", scene_id: scene.id },
+      hidden: false,
+    }
+    const next = {
+      ...proj,
+      scenes: proj.scenes.map(s =>
+        s.id === scene.id
+          ? { ...s, hotspots: [...(s.hotspots ?? []), hs] }
+          : s
+      ),
+    }
     setProj(next)
     setStatus("Добавлен полигональный хотспот")
   }
@@ -245,10 +269,22 @@ export default function ScenesEditor() {
     if (!scene) return
     const id = "hs_" + Math.random().toString(36).slice(2,8)
     const circle = { cx:0.3, cy:0.3, r:0.1 }
-    const next = { ...proj, scenes: proj.scenes.map(s => s.id === scene.id
-      ? { ...s, hotspots: [...(s.hotspots ?? []), { id, shape: "circle", circle, tooltip: "Новый круг", action: { type: "go_scene", scene_id: scene.id } }] }
-      : s
-    )}
+    const hs: Hotspot = {
+      id,
+      shape: "circle",
+      circle,
+      tooltip: "Новый круг",
+      action: { type: "go_scene", scene_id: scene.id },
+      hidden: false,
+    }
+    const next = {
+      ...proj,
+      scenes: proj.scenes.map(s =>
+        s.id === scene.id
+          ? { ...s, hotspots: [...(s.hotspots ?? []), hs] }
+          : s
+      ),
+    }
     setProj(next)
     setStatus("Добавлен круглый хотспот")
   }
