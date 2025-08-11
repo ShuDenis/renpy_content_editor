@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 
-const dataDir = path.join(__dirname, 'data');
+const dataDir = path.resolve(__dirname, process.env.DATA_DIR || 'data');
 const scenesPath = path.join(dataDir, 'scenes.json');
 const dialogsPath = path.join(dataDir, 'dialogs.json');
 
