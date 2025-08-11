@@ -20,6 +20,11 @@ npm run dev
 npm run build && npm run preview
 ```
 
+## Переменные окружения
+
+- `DATA_DIR` — путь к директории с `scenes.json` и `dialogs.json` для бэкенда (`apps/backend/server.js`).
+  По умолчанию используется `data/` рядом с сервером.
+
 ## Архитектура
 - **/packages/core/src/** — типы и схемы (Zod), утилиты импорта/экспорта.
 - **/src/components/** — ScenesEditor (канвас с хотспотами), DialogEditor (граф на React Flow).
