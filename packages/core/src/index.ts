@@ -1,5 +1,5 @@
-export * from './sceneSchema'
-export * from './dialogSchema'
+export * from './sceneSchema';
+export * from './dialogSchema';
 export {
   round3,
   projectToCanvasScalar,
@@ -7,10 +7,8 @@ export {
   projectToCanvasPoint,
   canvasToProjectPoint,
   convertProjectCoordsMode,
-  loadFileAsText,
-  saveTextFile,
-} from './utils'
-export * from './scenePersistence'
-export * from './useUndo'
-export * from './imageCache'
-
+} from './geometry';
+export { loadFileAsText, saveTextFile } from './io';
+export * from './scenePersistence';
+export * from './useUndo';
+export * from './imageCache';
