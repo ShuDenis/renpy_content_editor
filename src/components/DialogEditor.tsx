@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react"
 import ReactFlow, { Background, Controls, MiniMap, addEdge, Connection, ReactFlowProvider, Node, Edge, useEdgesState, useNodesState } from "reactflow"
 import 'reactflow/dist/style.css'
-import { DialogProject, emptyDialogProject, validateDialogProject } from "@core/dialogSchema"
+import { validateDialogProject, type DialogProject } from "@core/dialogSchema"
 import { loadFileAsText, saveTextFile } from "@core/utils"
-import { useUndoState } from "@core/useUndo"
+import { useDialogStore } from "../store"
 
 interface DialogNodeData {
   label: string
@@ -15,7 +15,10 @@ type DialogNode = Node<DialogNodeData>
 type DialogEdge = Edge<DialogEdgeData>
 
 function Graph() {
-  const [proj, setProj, _resetProj, undo, redo] = useUndoState<DialogProject>(emptyDialogProject(), validateDialogProject)
+  const proj = useDialogStore(s => s.proj)
+  const setProj = useDialogStore(s => s.setProj)
+  const undo = useDialogStore(s => s.undo)
+  const redo = useDialogStore(s => s.redo)
   const [nodes, setNodes, onNodesChange] = useNodesState<DialogNodeData>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<DialogEdgeData>([])
   const [status, setStatus] = useState("")

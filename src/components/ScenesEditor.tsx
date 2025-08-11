@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
-import { SceneProject, emptyProject, validateSceneProject, Layer } from "@core/sceneSchema"
-import { useUndoState } from "@core/useUndo"
-import type { Point, Hotspot } from "@core/sceneSchema"
+import { Layer, type Point, type Hotspot } from "@core/sceneSchema"
+import { useSceneStore } from "../store"
 import { round3, convertProjectCoordsMode } from "@core/utils"
 import { importSceneProjectFromFile, exportSceneProjectToFile, saveProjectToStorage, loadProjectFromStorage, parseSceneProject } from "@core/scenePersistence"
 import HotspotPanel from "./HotspotPanel"
@@ -13,7 +12,11 @@ import HotspotInspector from "./HotspotInspector"
 import { HotspotContext } from "./HotspotContext"
 
 export default function ScenesEditor() {
-  const [proj, setProj, resetProj, undo, redo] = useUndoState<SceneProject>(emptyProject(), validateSceneProject)
+  const proj = useSceneStore(s => s.proj)
+  const setProj = useSceneStore(s => s.setProj)
+  const resetProj = useSceneStore(s => s.resetProj)
+  const undo = useSceneStore(s => s.undo)
+  const redo = useSceneStore(s => s.redo)
   const [status, setStatus] = useState<string>("")
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [activeSceneId, setActiveSceneId] = useState<string | undefined>(undefined)
