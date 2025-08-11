@@ -13,19 +13,22 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 
-const dataDir = path.join(__dirname, 'data');
+const dataDir = path.resolve(__dirname, process.env.DATA_DIR || 'data');
 const scenesPath = path.join(dataDir, 'scenes.json');
 const dialogsPath = path.join(dataDir, 'dialogs.json');
 
 async function readData(filePath, key) {
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
   try {
     const content = await fs.readFile(filePath, 'utf-8');
     return JSON.parse(content);
-  } catch {
-    const initial = { schema_version: 1 };
-    initial[key] = [];
-    await fs.writeFile(filePath, JSON.stringify(initial, null, 2));
-    return initial;
+  } catch (err) {
+    if (err?.code === 'ENOENT') {
+      const initial = { schema_version: 1, [key]: [] };
+      await fs.writeFile(filePath, JSON.stringify(initial, null, 2));
+      return initial;
+    }
+    throw err;
   }
 }
 
@@ -34,8 +37,12 @@ async function writeData(filePath, data) {
 }
 
 app.get('/scenes', async (req, res) => {
-  const data = await readData(scenesPath, 'scenes');
-  res.json(data);
+  try {
+    const data = await readData(scenesPath, 'scenes');
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.post('/scenes', async (req, res) => {
@@ -56,8 +63,12 @@ app.post('/scenes', async (req, res) => {
 });
 
 app.get('/dialogs', async (req, res) => {
-  const data = await readData(dialogsPath, 'dialogs');
-  res.json(data);
+  try {
+    const data = await readData(dialogsPath, 'dialogs');
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.post('/dialogs', async (req, res) => {
