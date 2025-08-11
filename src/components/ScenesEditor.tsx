@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
 import { SceneProject, emptyProject, validateSceneProject, Layer } from "@lib/sceneSchema"
+import { useUndoState } from "@lib/useUndo"
 import type { Point, Hotspot } from "@lib/sceneSchema"
 import { round3, convertProjectCoordsMode } from "@lib/utils"
 import { importSceneProjectFromFile, exportSceneProjectToFile, saveProjectToStorage, loadProjectFromStorage, parseSceneProject } from "@lib/scenePersistence"
@@ -12,7 +13,7 @@ import HotspotInspector from "./HotspotInspector"
 import { HotspotContext } from "./HotspotContext"
 
 export default function ScenesEditor() {
-  const [proj, setProj] = useState<SceneProject>(emptyProject())
+  const [proj, setProj, resetProj, undo, redo] = useUndoState<SceneProject>(emptyProject(), validateSceneProject)
   const [status, setStatus] = useState<string>("")
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [activeSceneId, setActiveSceneId] = useState<string | undefined>(undefined)
@@ -36,7 +37,7 @@ export default function ScenesEditor() {
   useEffect(() => {
     const stored = loadProjectFromStorage()
     if (stored) {
-      setProj(stored)
+      resetProj(stored)
       setActiveSceneId(stored.scenes[0]?.id)
       setStatus("Загружен проект из localStorage")
       return
@@ -47,7 +48,7 @@ export default function ScenesEditor() {
         try {
           const json = JSON.parse(text)
           const parsed = parseSceneProject(json)
-          setProj(parsed)
+          resetProj(parsed)
           setActiveSceneId(parsed.scenes[0]?.id)
           setStatus("Загружен samples/scenes.json")
         } catch (e:any) {
@@ -61,6 +62,20 @@ export default function ScenesEditor() {
     setSelectedHs(null)
     setSelectedLayerId(null)
   }, [activeSceneId])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+        e.preventDefault()
+        undo()
+      } else if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === "y" || (e.shiftKey && e.key.toLowerCase() === "z"))) {
+        e.preventDefault()
+        redo()
+      }
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [undo, redo])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -132,7 +147,7 @@ export default function ScenesEditor() {
     const id = "layer_" + Math.random().toString(36).slice(2,8)
     const layers = [...scene.layers, { id, type: "image" as const, image: "", alpha: 1, zorder: scene.layers.length }]
     const next = { ...proj, scenes: proj.scenes.map(s => s.id === scene.id ? { ...s, layers } : s) }
-    setProj(validateSceneProject(next))
+    setProj(next)
     setSelectedLayerId(id)
   }
 
@@ -142,7 +157,7 @@ export default function ScenesEditor() {
     const id = "layer_" + Math.random().toString(36).slice(2,8)
     const layers = [...scene.layers, { id, type: "color" as const, color: "#000000", alpha: 1, zorder: scene.layers.length }]
     const next = { ...proj, scenes: proj.scenes.map(s => s.id === scene.id ? { ...s, layers } : s) }
-    setProj(validateSceneProject(next))
+    setProj(next)
     setSelectedLayerId(id)
   }
 
@@ -152,7 +167,7 @@ export default function ScenesEditor() {
     const scene = proj.scenes[sceneIndex]
     const layers = scene.layers.map(l => l.id === id ? layer : l).map((l,i) => ({ ...l, zorder: i }))
     const next = { ...proj, scenes: proj.scenes.map((s,i)=> i===sceneIndex? { ...s, layers }: s) }
-    setProj(validateSceneProject(next))
+    setProj(next)
   }
 
   function deleteLayer(id: string) {
@@ -161,7 +176,7 @@ export default function ScenesEditor() {
     const scene = proj.scenes[sceneIndex]
     const layers = scene.layers.filter(l => l.id !== id).map((l,i)=> ({ ...l, zorder: i }))
     const next = { ...proj, scenes: proj.scenes.map((s,i)=> i===sceneIndex? { ...s, layers }: s) }
-    setProj(validateSceneProject(next))
+    setProj(next)
     if (selectedLayerId === id) setSelectedLayerId(null)
   }
 
@@ -174,7 +189,7 @@ export default function ScenesEditor() {
     const copy: Layer = { ...layer, id: newId }
     const layers = [...scene.layers, { ...copy, zorder: scene.layers.length }]
     const next = { ...proj, scenes: proj.scenes.map(s => s.id === scene.id ? { ...s, layers } : s) }
-    setProj(validateSceneProject(next))
+    setProj(next)
     setSelectedLayerId(newId)
   }
 
@@ -184,7 +199,7 @@ export default function ScenesEditor() {
     const id = "layer_" + Math.random().toString(36).slice(2,8)
     const layers = [...scene.layers, { id, type: "image" as const, image: src, alpha: 1, zorder: scene.layers.length }]
     const next = { ...proj, scenes: proj.scenes.map(s => s.id === scene.id ? { ...s, layers } : s) }
-    setProj(validateSceneProject(next))
+    setProj(next)
     setSelectedLayerId(id)
   }
 
@@ -197,18 +212,30 @@ export default function ScenesEditor() {
     layers.splice(to, 0, item)
     const relabeled = layers.map((l,i)=> ({ ...l, zorder: i }))
     const next = { ...proj, scenes: proj.scenes.map((s,i)=> i===sceneIndex? { ...s, layers: relabeled }: s) }
-    setProj(validateSceneProject(next))
+    setProj(next)
   }
 
   function addRectHotspot() {
     const scene = proj.scenes.find(s => s.id === activeSceneId)
     if (!scene) return
     const id = "hs_" + Math.random().toString(36).slice(2,8)
-    const next = { ...proj, scenes: proj.scenes.map(s => s.id === scene.id
-      ? { ...s, hotspots: [...(s.hotspots ?? []), { id, shape: "rect", rect: { x: 0.1, y: 0.1, w: 0.2, h: 0.12 }, tooltip: "Новый хотспот", action: { type: "go_scene", scene_id: scene.id } }] }
-      : s
-    )}
-    setProj(validateSceneProject(next))
+    const hs: Hotspot = {
+      id,
+      shape: "rect",
+      rect: { x: 0.1, y: 0.1, w: 0.2, h: 0.12 },
+      tooltip: "Новый хотспот",
+      action: { type: "go_scene", scene_id: scene.id },
+      hidden: false,
+    }
+    const next = {
+      ...proj,
+      scenes: proj.scenes.map(s =>
+        s.id === scene.id
+          ? { ...s, hotspots: [...(s.hotspots ?? []), hs] }
+          : s
+      ),
+    }
+    setProj(next)
     setStatus("Добавлен прямоугольный хотспот")
   }
 
@@ -217,11 +244,23 @@ export default function ScenesEditor() {
     if (!scene) return
     const id = "hs_" + Math.random().toString(36).slice(2,8)
     const points: Point[] = [[0.1,0.1],[0.2,0.1],[0.15,0.2]]
-    const next = { ...proj, scenes: proj.scenes.map(s => s.id === scene.id
-      ? { ...s, hotspots: [...(s.hotspots ?? []), { id, shape: "polygon", points, tooltip: "Новый полигон", action: { type: "go_scene", scene_id: scene.id } }] }
-      : s
-    )}
-    setProj(validateSceneProject(next))
+    const hs: Hotspot = {
+      id,
+      shape: "polygon",
+      points,
+      tooltip: "Новый полигон",
+      action: { type: "go_scene", scene_id: scene.id },
+      hidden: false,
+    }
+    const next = {
+      ...proj,
+      scenes: proj.scenes.map(s =>
+        s.id === scene.id
+          ? { ...s, hotspots: [...(s.hotspots ?? []), hs] }
+          : s
+      ),
+    }
+    setProj(next)
     setStatus("Добавлен полигональный хотспот")
   }
 
@@ -230,11 +269,23 @@ export default function ScenesEditor() {
     if (!scene) return
     const id = "hs_" + Math.random().toString(36).slice(2,8)
     const circle = { cx:0.3, cy:0.3, r:0.1 }
-    const next = { ...proj, scenes: proj.scenes.map(s => s.id === scene.id
-      ? { ...s, hotspots: [...(s.hotspots ?? []), { id, shape: "circle", circle, tooltip: "Новый круг", action: { type: "go_scene", scene_id: scene.id } }] }
-      : s
-    )}
-    setProj(validateSceneProject(next))
+    const hs: Hotspot = {
+      id,
+      shape: "circle",
+      circle,
+      tooltip: "Новый круг",
+      action: { type: "go_scene", scene_id: scene.id },
+      hidden: false,
+    }
+    const next = {
+      ...proj,
+      scenes: proj.scenes.map(s =>
+        s.id === scene.id
+          ? { ...s, hotspots: [...(s.hotspots ?? []), hs] }
+          : s
+      ),
+    }
+    setProj(next)
     setStatus("Добавлен круглый хотспот")
   }
 
@@ -252,7 +303,7 @@ export default function ScenesEditor() {
     const scene = proj.scenes[sceneIndex]
     const hotspots = scene.hotspots!.map((h,i)=> i===index?hs:h)
     const next = { ...proj, scenes: proj.scenes.map((s,i)=> i===sceneIndex?{...s, hotspots}:s) }
-    setProj(validateSceneProject(next))
+    setProj(next)
   }
 
   function toggleHotspotVisibility(index: number) {
@@ -284,7 +335,7 @@ export default function ScenesEditor() {
           insertVertex(hsCopy, proj, hit.index, x, y, W, H)
           const hotspots = scene.hotspots!.map((h,j)=> j===i?hsCopy:h)
           const next = { ...proj, scenes: proj.scenes.map(s => s.id===scene.id? {...s, hotspots}: s) }
-          setProj(validateSceneProject(next))
+          setProj(next)
           setDrag({ hsIndex:i, mode:"vertex", vertexIndex: hit.index+1, prevX:x, prevY:y })
         } else if (hit.kind === "vertex") {
           setDrag({ hsIndex:i, mode:"vertex", vertexIndex: hit.index, prevX:x, prevY:y })
@@ -321,7 +372,7 @@ export default function ScenesEditor() {
     }
     const hotspots = scene.hotspots!.map((h,j)=> j===drag.hsIndex?hsCopy:h)
     const next = { ...proj, scenes: proj.scenes.map((s,si)=> si===sceneIndex? {...s, hotspots}: s) }
-    setProj(validateSceneProject(next))
+    setProj(next)
     setDrag({ ...drag, prevX:x, prevY:y })
   }
 
@@ -338,7 +389,7 @@ export default function ScenesEditor() {
     const sceneIndex = proj.scenes.findIndex(s => s.id === activeSceneId)
     if (sceneIndex < 0) return
     const next = { ...proj, scenes: proj.scenes.map((s,i)=> i===sceneIndex? { ...s, name }: s) }
-    setProj(validateSceneProject(next))
+    setProj(next)
   }
 
   function openPreview() {
@@ -378,7 +429,7 @@ export default function ScenesEditor() {
               <select value={`${proj.project.reference_resolution.width}x${proj.project.reference_resolution.height}`} onChange={e=>{
                 const [w,h] = e.target.value.split('x').map(n=>parseInt(n))
                 const next = { ...proj, project: { ...proj.project, reference_resolution: { width:w, height:h } } }
-                setProj(validateSceneProject(next))
+                setProj(next)
               }}>
                 {resolutions.map(r=> (
                   <option key={r.label} value={`${r.width}x${r.height}`}>{r.label}</option>
@@ -391,12 +442,12 @@ export default function ScenesEditor() {
               <input type="number" value={proj.project.reference_resolution.width} onChange={e=>{
                 const w = parseInt(e.target.value)||0
                 const next = { ...proj, project: { ...proj.project, reference_resolution: { ...proj.project.reference_resolution, width:w } } }
-                setProj(validateSceneProject(next))
+                setProj(next)
               }} />
               <input type="number" value={proj.project.reference_resolution.height} onChange={e=>{
                 const h = parseInt(e.target.value)||0
                 const next = { ...proj, project: { ...proj.project, reference_resolution: { ...proj.project.reference_resolution, height:h } } }
-                setProj(validateSceneProject(next))
+                setProj(next)
               }} />
               <button onClick={()=>setManualRes(false)}>Presets</button>
             </div>
@@ -405,7 +456,7 @@ export default function ScenesEditor() {
             <select value={proj.project.coords_mode} onChange={e=>{
               const mode = e.target.value as 'relative'|'absolute'
               const converted = convertProjectCoordsMode(proj, mode)
-              setProj(validateSceneProject(converted))
+              setProj(converted)
             }}>
               <option value="relative">relative</option>
               <option value="absolute">absolute</option>
