@@ -12,6 +12,8 @@ vi.mock('@core/utils', async () => {
 
 import ScenesEditor from './ScenesEditor';
 import { loadFileAsText, saveTextFile } from '@core/utils';
+import { useSceneStore } from '../store';
+import { emptyProject } from '@core/sceneSchema';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ЧАСТЬ 1: тест клонирования хотспота (structuredClone)
@@ -91,6 +93,8 @@ describe('ScenesEditor', () => {
     mockCanvas();
 
     localStorage.clear();
+
+    useSceneStore.getState().resetProj(emptyProject());
 
     ;(globalThis as any).fetch = vi.fn(() =>
       Promise.resolve({

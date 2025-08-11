@@ -1,5 +1,5 @@
 import { render, fireEvent, waitFor } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { act } from 'react-dom/test-utils'
 
 vi.mock('@core/utils', () => ({
@@ -63,12 +63,18 @@ vi.mock('reactflow', async () => {
 
 import DialogEditor from './DialogEditor'
 import * as ReactFlowModule from 'reactflow'
+import { useDialogStore } from '../store'
+import { emptyDialogProject } from '@core/dialogSchema'
 
 
 const __rf = (ReactFlowModule as any).__rf
 
 
 describe('DialogEditor', () => {
+  beforeEach(() => {
+    useDialogStore.getState().resetProj(emptyDialogProject())
+  })
+
   it('addNode adds a node to project', async () => {
     const { getByText } = render(<DialogEditor />)
     fireEvent.click(getByText('+ Узел'))
