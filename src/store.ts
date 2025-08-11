@@ -20,8 +20,12 @@ interface UndoState<T> {
   redo: () => void;
 }
 
-function createUndoStore<T>(initial: T, validate: (v: T) => T) {
-  return create<UndoState<T>>((set, get) => ({
+export function createUndoStore<T>(
+  initial: T,
+  validate: (v: T) => T,
+  maxHistory = 50,
+) {
+  return create<UndoState<T>>((set) => ({
     proj: validate(initial),
     undoStack: [],
     redoStack: [],
@@ -32,7 +36,7 @@ function createUndoStore<T>(initial: T, validate: (v: T) => T) {
           typeof value === "function" ? (value as (p: T) => T)(prev) : value;
         return {
           proj: validate(next),
-          undoStack: [...state.undoStack, prev],
+          undoStack: [...state.undoStack, prev].slice(-maxHistory),
           redoStack: [],
         };
       }),
@@ -43,7 +47,7 @@ function createUndoStore<T>(initial: T, validate: (v: T) => T) {
         const prev = state.undoStack[state.undoStack.length - 1];
         if (prev === undefined) return state;
         const undoStack = state.undoStack.slice(0, -1);
-        const redoStack = [...state.redoStack, state.proj];
+        const redoStack = [...state.redoStack, state.proj].slice(-maxHistory);
         return { proj: prev, undoStack, redoStack };
       }),
     redo: () =>
@@ -51,7 +55,7 @@ function createUndoStore<T>(initial: T, validate: (v: T) => T) {
         const next = state.redoStack[state.redoStack.length - 1];
         if (next === undefined) return state;
         const redoStack = state.redoStack.slice(0, -1);
-        const undoStack = [...state.undoStack, state.proj];
+        const undoStack = [...state.undoStack, state.proj].slice(-maxHistory);
         return { proj: next, undoStack, redoStack };
       }),
   }));
