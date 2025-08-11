@@ -1,0 +1,117 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Ren'Py Content Editor API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/scenes": {
+      "get": {
+        "summary": "List scenes",
+        "responses": {
+          "200": {
+            "description": "List of scenes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "schema_version": { "type": "integer" },
+                    "scenes": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Scene" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a scene",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Scene" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Scene created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Scene" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dialogs": {
+      "get": {
+        "summary": "List dialogs",
+        "responses": {
+          "200": {
+            "description": "List of dialogs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "schema_version": { "type": "integer" },
+                    "dialogs": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Dialog" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a dialog",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Dialog" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Dialog created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Dialog" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Scene": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "content": { "type": "string" }
+        }
+      },
+      "Dialog": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "text": { "type": "string" }
+        }
+      }
+    }
+  }
+}
