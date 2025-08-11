@@ -1,8 +1,8 @@
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@core/utils', async () => {
-  const actual = await vi.importActual<any>('@core/utils');
+vi.mock('@core/io', async () => {
+  const actual = await vi.importActual<any>('@core/io');
   return {
     ...actual,
     loadFileAsText: vi.fn(),
@@ -11,7 +11,7 @@ vi.mock('@core/utils', async () => {
 });
 
 import ScenesEditor from './ScenesEditor';
-import { loadFileAsText, saveTextFile } from '@core/utils';
+import { loadFileAsText, saveTextFile } from '@core/io';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ЧАСТЬ 1: тест клонирования хотспота (structuredClone)

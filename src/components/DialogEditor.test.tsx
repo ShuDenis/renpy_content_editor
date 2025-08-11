@@ -2,7 +2,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { act } from 'react-dom/test-utils'
 
-vi.mock('@core/utils', () => ({
+vi.mock('@core/io', () => ({
   loadFileAsText: vi.fn(),
   saveTextFile: vi.fn()
 }))

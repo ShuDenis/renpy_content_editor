@@ -7,9 +7,8 @@ export {
   projectToCanvasPoint,
   canvasToProjectPoint,
   convertProjectCoordsMode,
-  loadFileAsText,
-  saveTextFile,
-} from './utils'
+} from './geometry'
+export { loadFileAsText, saveTextFile } from './io'
 export * from './scenePersistence'
 export * from './useUndo'
 export * from './imageCache'

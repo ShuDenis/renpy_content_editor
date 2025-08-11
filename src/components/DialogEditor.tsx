@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react"
 import ReactFlow, { Background, Controls, MiniMap, addEdge, Connection, ReactFlowProvider, Node, Edge, useEdgesState, useNodesState } from "reactflow"
 import 'reactflow/dist/style.css'
 import { DialogProject, emptyDialogProject, validateDialogProject } from "@core/dialogSchema"
-import { loadFileAsText, saveTextFile } from "@core/utils"
+import { loadFileAsText, saveTextFile } from "@core/io"
 import { useUndoState } from "@core/useUndo"
 
 interface DialogNodeData {
