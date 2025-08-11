@@ -1,8 +1,8 @@
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@lib/utils', async () => {
-  const actual = await vi.importActual<any>('@lib/utils');
+vi.mock('@core/utils', async () => {
+  const actual = await vi.importActual<any>('@core/utils');
   return {
     ...actual,
     loadFileAsText: vi.fn(),
@@ -11,11 +11,11 @@ vi.mock('@lib/utils', async () => {
 });
 
 import ScenesEditor from './ScenesEditor';
-import { loadFileAsText, saveTextFile } from '@lib/utils';
+import { loadFileAsText, saveTextFile } from '@core/utils';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ЧАСТЬ 1: тест клонирования хотспота (structuredClone)
-// (без импорта типов из @lib/sceneSchema, чтобы не ломать сборку)
+// (без импорта типов из @core/sceneSchema, чтобы не ломать сборку)
 // ─────────────────────────────────────────────────────────────────────────────
 type THotspot = {
   id: string;

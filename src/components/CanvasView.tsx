@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react"
-import type { SceneProject, Hotspot, Layer } from "@lib/sceneSchema"
-import { globalImageCache } from "@lib/imageCache"
-import { projectToCanvasScalar, projectToCanvasPoint } from "@lib/utils"
+import type { SceneProject, Hotspot, Layer } from "@core/sceneSchema"
+import { globalImageCache } from "@core/imageCache"
+import { projectToCanvasScalar, projectToCanvasPoint } from "@core/utils"
 
 type CanvasViewProps =
   | {

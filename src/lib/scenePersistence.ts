@@ -1,5 +1,5 @@
-import { SceneProject, validateSceneProject } from "@lib/sceneSchema";
-import { loadFileAsText, saveTextFile } from "@lib/utils";
+import { SceneProject, validateSceneProject } from "@core/sceneSchema";
+import { loadFileAsText, saveTextFile } from "@core/utils";
 
 export const SCHEMA_VERSION = 1;
 

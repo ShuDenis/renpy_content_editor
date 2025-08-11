@@ -32,7 +32,7 @@ export function saveTextFile(content: string, filename: string) {
 }
 
 // coordinate helpers
-import type { SceneProject, Hotspot } from "@lib/sceneSchema"
+import type { SceneProject, Hotspot } from "@core/sceneSchema"
 
 export function round3(value: number): number {
   return Math.round(value * 1000) / 1000

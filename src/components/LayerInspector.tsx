@@ -1,5 +1,5 @@
 import React from "react"
-import type { Layer } from "@lib/sceneSchema"
+import type { Layer } from "@core/sceneSchema"
 
 type Props = {
   layer: Layer | null

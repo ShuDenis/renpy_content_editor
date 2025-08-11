@@ -18,9 +18,6 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@lib/*": [
-        "src/lib/*"
-      ],
       "@components/*": [
         "src/components/*"
       ],
