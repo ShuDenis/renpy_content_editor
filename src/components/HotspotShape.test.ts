@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { drawHotspot, hitTestHotspot, translateHotspot, moveVertexTo, setCircleRadius, insertVertex } from './HotspotShape'
-import type { SceneProject, Hotspot } from '@lib/sceneSchema'
-import { projectToCanvasScalar } from '@lib/utils'
+import type { SceneProject, Hotspot } from '@core/sceneSchema'
+import { projectToCanvasScalar } from '@core/utils'
 
 const proj: SceneProject = {
   version: '1.0',

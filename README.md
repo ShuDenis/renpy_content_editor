@@ -21,7 +21,7 @@ npm run build && npm run preview
 ```
 
 ## Архитектура
-- **/src/lib/** — типы и схемы (Zod), утилиты импорта/экспорта.
+- **/packages/core/src/** — типы и схемы (Zod), утилиты импорта/экспорта.
 - **/src/components/** — ScenesEditor (канвас с хотспотами), DialogEditor (граф на React Flow).
 - **/schema/** — JSON Schema для сцен/диалогов (используемо из Python).
 - **/samples/** — примеры JSON (подгружаются в редактор для старта).

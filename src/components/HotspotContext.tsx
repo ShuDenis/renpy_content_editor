@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react"
-import type { Hotspot } from "@lib/sceneSchema"
+import type { Hotspot } from "@core/sceneSchema"
 
 type Ctx = { hotspot: Hotspot; setHotspot(hs: Hotspot): void }
 

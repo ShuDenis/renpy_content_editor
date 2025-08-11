@@ -2,7 +2,7 @@ import { render, fireEvent, screen } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import HotspotInspector from './HotspotInspector'
 import { HotspotContext } from './HotspotContext'
-import type { Hotspot } from '@lib/sceneSchema'
+import type { Hotspot } from '@core/sceneSchema'
 
 describe('HotspotInspector', () => {
   it('shows error for invalid expression', () => {
