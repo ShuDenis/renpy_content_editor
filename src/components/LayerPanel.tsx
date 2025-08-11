@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import type { Layer } from "@lib/sceneSchema"
+import type { Layer } from "@core/sceneSchema"
 
 type Props = {
   layers: Layer[]

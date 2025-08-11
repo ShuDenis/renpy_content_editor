@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { Hotspot, HotspotSchema } from "@lib/sceneSchema"
+import { Hotspot, HotspotSchema } from "@core/sceneSchema"
 import { useHotspot } from "./HotspotContext"
 
 type Action = NonNullable<Hotspot['action']>

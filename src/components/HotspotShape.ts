@@ -1,6 +1,6 @@
-import { Hotspot, SceneProject } from "@lib/sceneSchema"
-import type { Point } from "@lib/sceneSchema"
-import { projectToCanvasPoint, projectToCanvasScalar, canvasToProjectPoint, canvasToProjectScalar } from "@lib/utils"
+import { Hotspot, SceneProject } from "@core/sceneSchema"
+import type { Point } from "@core/sceneSchema"
+import { projectToCanvasPoint, projectToCanvasScalar, canvasToProjectPoint, canvasToProjectScalar } from "@core/utils"
 
 export type HitResult =
   | { kind: "move" }

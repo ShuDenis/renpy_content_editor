@@ -2,13 +2,13 @@ import { render, fireEvent, waitFor } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { act } from 'react-dom/test-utils'
 
-vi.mock('@lib/utils', () => ({
+vi.mock('@core/utils', () => ({
   loadFileAsText: vi.fn(),
   saveTextFile: vi.fn()
 }))
 
-vi.mock('@lib/dialogSchema', async () => {
-  const actual = await vi.importActual<any>('@lib/dialogSchema')
+vi.mock('@core/dialogSchema', async () => {
+  const actual = await vi.importActual<any>('@core/dialogSchema')
   return {
     ...actual,
     validateDialogProject: vi.fn((p: any) => p)
