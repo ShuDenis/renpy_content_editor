@@ -137,6 +137,56 @@
           }
         }
       ]
+    },
+    {
+      "id": "library",
+      "name": "Библиотека",
+      "enter_transition": {
+        "type": "fade",
+        "duration": 0.2
+      },
+      "layers": [
+        {
+          "id": "bg",
+          "type": "image",
+          "image": "bg/library_day.jpg",
+          "zorder": 0
+        }
+      ],
+      "hotspots": [
+        {
+          "id": "back_to_hall_from_library",
+          "shape": "rect",
+          "rect": { "x": 0.05, "y": 0.8, "w": 0.1, "h": 0.15 },
+          "tooltip": "В коридор",
+          "action": { "type": "go_scene", "scene_id": "hall" }
+        }
+      ]
+    },
+    {
+      "id": "courtyard",
+      "name": "Двор",
+      "enter_transition": {
+        "type": "dissolve",
+        "duration": 0.2
+      },
+      "layers": [
+        {
+          "id": "bg",
+          "type": "image",
+          "image": "bg/courtyard_day.jpg",
+          "zorder": 0
+        }
+      ],
+      "hotspots": [
+        {
+          "id": "back_to_hall_from_courtyard",
+          "shape": "rect",
+          "rect": { "x": 0.9, "y": 0.8, "w": 0.1, "h": 0.15 },
+          "tooltip": "В коридор",
+          "action": { "type": "go_scene", "scene_id": "hall" }
+        }
+      ]
     }
   ]
 }

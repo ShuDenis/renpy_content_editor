@@ -25,13 +25,14 @@ describe('Scenes API', () => {
   });
 
   it('POST /scenes adds new scene', async () => {
-    const scene = { id: 1, name: 'Test Scene' };
+    const scene = { id: '1', name: 'Test Scene' };
     const postRes = await request(app).post('/scenes').send(scene);
     expect(postRes.status).toBe(201);
-    expect(postRes.body).toEqual(scene);
+    expect(postRes.body).toMatchObject(scene);
 
     const getRes = await request(app).get('/scenes');
-    expect(getRes.body.scenes).toEqual([scene]);
+    expect(getRes.body.scenes.length).toBe(1);
+    expect(getRes.body.scenes[0]).toMatchObject(scene);
     expect(getRes.body.schema_version).toBe(2);
   });
 });
@@ -56,13 +57,14 @@ describe('Dialogs API', () => {
   });
 
   it('POST /dialogs adds new dialog', async () => {
-    const dialog = { id: 1, text: 'Hello' };
+    const dialog = { id: '1', nodes: [{ id: 'n1', text: 'Hello' }] };
     const postRes = await request(app).post('/dialogs').send(dialog);
     expect(postRes.status).toBe(201);
-    expect(postRes.body).toEqual(dialog);
+    expect(postRes.body).toMatchObject(dialog);
 
     const getRes = await request(app).get('/dialogs');
-    expect(getRes.body.dialogs).toEqual([dialog]);
+    expect(getRes.body.dialogs.length).toBe(1);
+    expect(getRes.body.dialogs[0]).toMatchObject(dialog);
     expect(getRes.body.schema_version).toBe(2);
   });
 });

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { SceneProjectSchema } from '../../packages/core/sceneSchema.js';
 
-export const SceneSchema = SceneProjectSchema.shape.scenes.element;
+export const SceneSchema = SceneProjectSchema.shape.scenes._def.innerType.element;
 
 const Choice = z.object({
   text: z.string().default(''),
