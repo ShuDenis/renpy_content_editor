@@ -77,17 +77,6 @@ export default function CanvasView(props: CanvasViewProps) {
 
   if (onExit) {
     return (
-      <div
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: '#000',
-          zIndex: 1000,
-        }}
-        onClick={onExit}
-      >
-        {canvasElement}
-      </div>
       <FullscreenCanvasOverlay onExit={onExit}>
         {canvasElement}
       </FullscreenCanvasOverlay>

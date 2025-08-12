@@ -96,15 +96,27 @@ export default function ScenesEditor() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
+    const updateSize = () => {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      setCanvasSize({ width: canvas.width, height: canvas.height });
+    };
+    updateSize();
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateSize) : null;
+    observer?.observe(canvas);
+    return () => observer?.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
     const scene = proj.scenes.find((s) => s.id === activeSceneId);
     if (!canvas || !scene) return;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
-    setCanvasSize({ width: canvas.width, height: canvas.height });
-    const ctx = canvas.getContext('2d')!;
-    const W = canvas.width,
-      H = canvas.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const W = canvasSize.width;
+    const H = canvasSize.height;
     ctx.clearRect(0, 0, W, H);
     // grid
     ctx.globalAlpha = 1;
@@ -131,7 +143,7 @@ export default function ScenesEditor() {
     for (const hs of scene.hotspots ?? []) {
       if (!hs.hidden) drawHotspot(ctx, proj, hs, W, H);
     }
-  }, [proj, activeSceneId]);
+  }, [proj, activeSceneId, canvasSize]);
 
   async function onSaveClicked() {
     try {
@@ -659,9 +671,9 @@ export default function ScenesEditor() {
         <div
           style={{
             width: '100%',
-            height: '100%',
             maxWidth: 'calc(100vw - 580px)',
-            aspectRatio: '16/9',
+            maxHeight: '100%',
+            aspectRatio: `${proj.project.reference_resolution.width}/${proj.project.reference_resolution.height}`,
             position: 'relative',
             border: '1px solid #ddd',
             background: '#fff',
